@@ -1,0 +1,20 @@
+---
+import LogoMark from './LogoMark.astro';
+
+interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  inverted?: boolean;
+  class?: string;
+}
+const { size = 'md', inverted = false, class: className } = Astro.props;
+const mark = size === 'lg' ? 44 : size === 'sm' ? 30 : 36;
+const text = size === 'lg' ? 'text-[1.7rem]' : size === 'sm' ? 'text-xl' : 'text-[1.45rem]';
+---
+
+<span class:list={['inline-flex items-center gap-2.5', className]}>
+  <LogoMark size={mark} />
+  <span class:list={['font-display font-extrabold leading-none tracking-[-0.03em]', text]}>
+    <span class={inverted ? 'text-white' : 'text-ink'}>Fırsat</span>
+    <span class={inverted ? 'text-brand' : 'text-brand-text'}>Bol</span>
+  </span>
+</span>

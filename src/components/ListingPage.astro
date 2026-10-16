@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AttributionNotice from './AttributionNotice.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DealListing from './DealListing.astro';
+import AdSlot from './AdSlot.astro';
+import type { Deal } from '../lib/deals/schema';
+import { breadcrumbJsonLd, itemListJsonLd } from '../lib/seo';
+
+interface Props {
+  deals: readonly Deal[];
+  pageDeals: readonly Deal[];
+  page: number;
+  totalPages: number;
+}
+const { deals, pageDeals, page, totalPages } = Astro.props;
+const canonical = page > 1 ? `/firsatlar/sayfa/${page}/` : '/firsatlar/';
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Tüm fırsatlar', path: '/firsatlar/' },
+  ...(page > 1 ? [{ name: `Sayfa ${page}`, path: canonical }] : []),
+];
+const title = page > 1 ? `Tüm Fırsatlar — Sayfa ${page}` : 'Tüm Fırsatlar ve Kampanyalar';
+---
+
+<BaseLayout
+  title={title}
+  description="Yetkili iş ortaklarımızdan derlenen güncel indirim, kampanya ve etkinlik fırsatları. Kategoriye, şehre ve satıcıya göre filtreleyin, fiyata göre sıralayın."
+  canonical={canonical}
+  noindex={deals.length === 0}
+  jsonLd={[
+    breadcrumbJsonLd(crumbs),
+    ...(pageDeals.length
+      ? [
+          itemListJsonLd(
+            title,
+            pageDeals.map((d) => ({ name: d.title, path: `/firsat/${d.slug}/` })),
+          ),
+        ]
+      : []),
+  ]}
+>
+  <div class="container-page py-8 sm:py-10">
+    <Breadcrumbs crumbs={crumbs} />
+    <div class="mb-6 mt-4 max-w-3xl">
+      <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Tüm fırsatlar</h1>
+      <p class="mt-2 text-muted">
+        Fiyat, indirim ve geçerlilik bilgileri kaynağından alınır; son koşullar satıcı sayfasında geçerlidir. İndirim oranı yalnızca
+        doğrulanabildiğinde gösterilir.
+      </p>
+    </div>
+    <DealListing deals={deals} pageDeals={pageDeals} page={page} totalPages={totalPages} base="/firsatlar/" placement="listing" />
+    <AdSlot id="listing-bottom" />
+    <AttributionNotice deals={deals} class="mt-10" />
+  </div>
+</BaseLayout>

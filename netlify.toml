@@ -1,0 +1,92 @@
+# FırsatBol — Netlify configuration
+# Secrets (API keys, tokens) are NEVER set here: use Site configuration → Environment variables.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--no-audit --no-fund"
+  # The publisher ID legitimately appears inside partner referral URLs on public pages.
+  # The API key is NOT listed here, so Netlify's secret scanner still fails the build if it ever leaks.
+  SECRETS_SCAN_OMIT_KEYS = "FIRSATBUFIRSAT_PUBLISHER_ID,SITE_URL,SITE_CONTACT_EMAIL,SITE_CONTROLLER_NAME,SITE_CONTROLLER_ADDRESS,SITE_KEP_ADDRESS,SITE_MERSIS_NO"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Deploy previews / branch deploys: never fail on provider outages, never index.
+[context.deploy-preview.environment]
+  DEALS_FAIL_BUILD_ON_PROVIDER_ERROR = "false"
+[context.branch-deploy.environment]
+  DEALS_FAIL_BUILD_ON_PROVIDER_ERROR = "false"
+
+# ---------------------------------------------------------------------------
+# Redirects
+# ---------------------------------------------------------------------------
+[[redirects]]
+  from = "/firsatlar/sayfa/1/"
+  to = "/firsatlar/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/kategori/:slug/sayfa/1/"
+  to = "/kategori/:slug/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/kategori/"
+  to = "/firsatlar/"
+  status = 301
+
+[[redirects]]
+  from = "/sehir/"
+  to = "/firsatlar/"
+  status = 301
+
+[[redirects]]
+  from = "/firsat/"
+  to = "/firsatlar/"
+  status = 301
+
+# ---------------------------------------------------------------------------
+# Headers (static responses; function responses set their own headers)
+# ---------------------------------------------------------------------------
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Strict-Transport-Security = "max-age=31536000"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://plausible.io https://cloud.umami.is https://www.googletagmanager.com; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self'; connect-src 'self' https://plausible.io https://cloud.umami.is https://api-gateway.umami.dev https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; frame-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/rss.xml"
+  [headers.values]
+    Content-Type = "application/rss+xml; charset=utf-8"

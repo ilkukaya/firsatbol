@@ -1,0 +1,91 @@
+---
+import ProseLayout from '../../layouts/ProseLayout.astro';
+import { OWNER } from '../../config/site';
+
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'İletişim', path: '/iletisim/' },
+];
+const subjects = ['Genel soru', 'Hatalı fırsat bilgisi bildirimi', 'İş birliği', 'KVKK başvurusu', 'Diğer'];
+---
+
+<ProseLayout
+  title="İletişim"
+  description="FırsatBol ile iletişime geçin: hatalı fırsat bildirimi, iş birliği teklifleri, KVKK başvuruları ve diğer sorularınız için iletişim formunu kullanın."
+  crumbs={crumbs}
+>
+  <p>
+    Sorularınız, hatalı gördüğünüz bir fırsat bilgisi, iş birliği teklifleriniz veya kişisel verilerinize ilişkin başvurularınız için
+    aşağıdaki formu kullanabilirsiniz. FırsatBol satış yapmadığı için sipariş, ödeme, teslimat ve iade konularında doğrudan satıcıyla
+    iletişime geçmeniz gerekir.
+  </p>
+  {OWNER.contactEmail && (
+    <p>
+      E-posta: <a href={`mailto:${OWNER.contactEmail}`}>{OWNER.contactEmail}</a>
+    </p>
+  )}
+
+  <Fragment slot="after">
+    <form
+      name="iletisim"
+      method="POST"
+      action="/iletisim/tesekkurler/"
+      data-netlify="true"
+      netlify-honeypot="bot-field"
+      class="card mt-8 grid gap-4 p-5 sm:p-7"
+      data-contact-form
+    >
+      <input type="hidden" name="form-name" value="iletisim" />
+      <p class="hidden">
+        <label>
+          Bu alanı boş bırakın: <input name="bot-field" tabindex="-1" autocomplete="off" />
+        </label>
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label class="label" for="c-name">
+            Adınız
+          </label>
+          <input class="field" id="c-name" name="name" type="text" autocomplete="name" required maxlength="120" />
+        </div>
+        <div>
+          <label class="label" for="c-email">
+            E-posta adresiniz
+          </label>
+          <input class="field" id="c-email" name="email" type="email" autocomplete="email" required maxlength="200" />
+        </div>
+      </div>
+      <div>
+        <label class="label" for="c-subject">
+          Konu
+        </label>
+        <select class="field" id="c-subject" name="subject" required>
+          {subjects.map((subject) => (
+            <option value={subject}>{subject}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label class="label" for="c-message">
+          Mesajınız
+        </label>
+        <textarea class="field min-h-40" id="c-message" name="message" required minlength="10" maxlength="5000" rows="7"></textarea>
+        <p class="mt-1.5 text-xs text-muted">
+          Hatalı bir fırsat bildiriyorsanız fırsat sayfasının bağlantısını veya “Fırsat kimliği”ni ekleyin.
+        </p>
+      </div>
+      <p class="text-xs leading-relaxed text-muted">
+        Formda paylaştığınız ad, e-posta ve mesaj yalnızca talebinizi yanıtlamak amacıyla işlenir. Ayrıntılar için
+        <a href="/gizlilik-politikasi/" class="font-semibold text-brand-text underline">
+          Gizlilik Politikası
+        </a>
+        ’nı inceleyebilirsiniz.
+      </p>
+      <div>
+        <button type="submit" class="btn-cta px-7 py-3">
+          Mesajı gönder
+        </button>
+      </div>
+    </form>
+  </Fragment>
+</ProseLayout>

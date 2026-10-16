@@ -1,0 +1,115 @@
+---
+import '@fontsource-variable/plus-jakarta-sans';
+import '@fontsource-variable/bricolage-grotesque';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Analytics from '../components/Analytics.astro';
+import ConsentBanner from '../components/ConsentBanner.astro';
+import { ANALYTICS, SITE, VERIFICATION, absoluteUrl } from '../config/site';
+import { getDeals } from '../lib/deals/repository';
+import { organizationJsonLd } from '../lib/seo';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Canonical path; defaults to the current path. */
+  canonical?: string;
+  noindex?: boolean;
+  ogImage?: string | undefined;
+  ogType?: 'website' | 'article';
+  jsonLd?: Record<string, unknown>[];
+  /** Use the bare title without the " | FırsatBol" suffix (homepage). */
+  rawTitle?: boolean;
+  publishedTime?: string;
+  modifiedTime?: string;
+}
+
+const {
+  title,
+  description,
+  canonical = Astro.url.pathname,
+  noindex = false,
+  ogImage: ogImageProp,
+  ogType = 'website',
+  jsonLd = [],
+  rawTitle = false,
+  publishedTime,
+  modifiedTime,
+} = Astro.props;
+
+const ogImage = ogImageProp ?? '/og/default.png';
+const { fixtureMode } = await getDeals();
+const fullTitle = rawTitle ? title : `${title} | ${SITE.name}`;
+const canonicalUrl = absoluteUrl(canonical);
+const robots = noindex || fixtureMode ? 'noindex, follow' : 'index, follow, max-image-preview:large';
+const structuredData = [organizationJsonLd(), ...jsonLd];
+---
+
+<!doctype html>
+<html lang="tr" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content={SITE.themeColor} />
+    <meta name="format-detection" content="telephone=no" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.name} — Yeni fırsatlar ve rehberler`} href="/rss.xml" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:locale" content={SITE.locale} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={absoluteUrl(ogImage)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absoluteUrl(ogImage)} />
+
+    {VERIFICATION.google && <meta name="google-site-verification" content={VERIFICATION.google} />}
+    {VERIFICATION.bing && <meta name="msvalidate.01" content={VERIFICATION.bing} />}
+    {VERIFICATION.yandex && <meta name="yandex-verification" content={VERIFICATION.yandex} />}
+
+    {structuredData.map((data) => (
+      <script type="application/ld+json" set:html={JSON.stringify(data)} />
+    ))}
+    <Analytics />
+  </head>
+  <body class="min-h-dvh flex flex-col">
+    <a
+      href="#icerik"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-white"
+    >
+      İçeriğe geç
+    </a>
+    {fixtureMode && (
+      <div class="bg-sun px-4 py-2 text-center text-sm font-semibold text-ink" role="status">
+        Geliştirme modu: sayfadaki fırsatlar SENTETİK ÖRNEK VERİDİR, gerçek değildir.
+      </div>
+    )}
+    <Header />
+    <main id="icerik" class="flex-1">
+      <slot />
+    </main>
+    <Footer />
+    {ANALYTICS.ga4Id && <ConsentBanner />}
+    <script>
+      import '../scripts/site';
+    </script>
+  </body>
+</html>

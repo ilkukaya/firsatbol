@@ -1,0 +1,61 @@
+{
+  "name": "firsatbol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FırsatBol — Türkiye için bağımsız fırsat ve indirim keşif platformu",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "dev:fixtures": "DEALS_USE_FIXTURES=true astro dev",
+    "build": "astro build",
+    "build:fixtures": "DEALS_USE_FIXTURES=true astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "typecheck": "astro check && tsc -p tsconfig.functions.json --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.{ts,astro,css}\" \"netlify/**/*.{ts,mts}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{mjs,ts}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "links": "node scripts/check-links.mjs",
+    "provider:inspect": "tsx scripts/inspect-provider.ts",
+    "ci": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run links",
+    "test:e2e:build": "DEALS_USE_FIXTURES=true DEALS_NOW=2026-10-16T12:00:00Z astro build && astro build --outDir dist-empty",
+    "test:e2e:all": "npm run test:e2e:build && playwright test",
+    "assets": "node scripts/generate-assets.mjs",
+    "format:check": "prettier --check \"src/**/*.{ts,astro,css}\" \"netlify/**/*.{ts,mts}\" \"tests/**/*.ts\" \"scripts/**/*.{ts,mjs}\" \"*.{mjs,ts}\""
+  },
+  "dependencies": {
+    "@astrojs/rss": "^4.0.19",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@netlify/blobs": "^11.1.4",
+    "@netlify/functions": "^6.0.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.4.0",
+    "fast-xml-parser": "^5.11.2",
+    "tailwindcss": "^4.3.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.56.1",
+    "@types/node": "^26.6.5",
+    "eslint": "^10.12.0",
+    "eslint-plugin-astro": "^1.7.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "playwright-core": "1.56.1"
+  }
+}

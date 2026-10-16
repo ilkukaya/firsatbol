@@ -1,0 +1,95 @@
+---
+import Logo from './Logo.astro';
+import { CATEGORIES } from '../config/categories';
+import { ANALYTICS, SITE, SOCIAL } from '../config/site';
+
+const year = new Intl.DateTimeFormat('tr-TR', { timeZone: SITE.timeZone, year: 'numeric' }).format(new Date());
+const columns = [
+  {
+    title: 'Keşfet',
+    links: [
+      { href: '/firsatlar/', label: 'Tüm fırsatlar' },
+      ...CATEGORIES.slice(0, 6).map((category) => ({ href: `/kategori/${category.slug}/`, label: category.name })),
+    ],
+  },
+  {
+    title: 'FırsatBol',
+    links: [
+      { href: '/hakkimizda/', label: 'Hakkımızda' },
+      { href: '/firsatlarin-kaynagi/', label: 'Fırsatların kaynağı' },
+      { href: '/editoryal-ilkeler/', label: 'Editoryal ilkeler' },
+      { href: '/rehber/', label: 'Alışveriş rehberleri' },
+      { href: '/is-birligi/', label: 'İş birliği' },
+      { href: '/iletisim/', label: 'İletişim' },
+    ],
+  },
+  {
+    title: 'Yasal',
+    links: [
+      { href: '/is-ortakligi-aciklamasi/', label: 'İş ortaklığı açıklaması' },
+      { href: '/gizlilik-politikasi/', label: 'Gizlilik politikası' },
+      { href: '/cerez-politikasi/', label: 'Çerez politikası' },
+      { href: '/kullanim-kosullari/', label: 'Kullanım koşulları' },
+      { href: '/bulten/', label: 'Bülten' },
+    ],
+  },
+];
+---
+
+<footer class="mt-20 bg-ink text-white/80">
+  <div class="container-page grid gap-10 py-14 lg:grid-cols-[1.3fr_2fr]">
+    <div class="max-w-sm">
+      <a href="/" aria-label="FırsatBol ana sayfa" class="inline-block rounded-lg">
+        <Logo inverted />
+      </a>
+      <p class="mt-4 font-display text-lg font-semibold text-white">{SITE.tagline}</p>
+      <p class="mt-3 text-sm leading-relaxed">
+        FırsatBol bağımsız bir fırsat keşif platformudur. Ürün satmaz, ödeme almaz; sizi fırsatın sahibi olan satıcıya yönlendirir. Bazı
+        bağlantılar iş ortaklığı bağlantısıdır ve bu bağlantılar üzerinden yapılan alışverişlerden komisyon kazanabiliriz; bu, ödediğiniz
+        fiyatı değiştirmez.
+        <a href="/is-ortakligi-aciklamasi/" class="font-semibold text-white underline underline-offset-2">
+          Ayrıntılar
+        </a>
+      </p>
+      {SOCIAL.length > 0 && (
+        <ul class="mt-5 flex gap-3 text-sm">
+          {SOCIAL.map((entry) => (
+            <li>
+              <a href={entry.url} rel="me noopener" target="_blank" class="underline-offset-2 hover:text-white hover:underline">
+                {entry.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+    <div class="grid grid-cols-2 gap-8 sm:grid-cols-3">
+      {columns.map((column) => (
+        <nav aria-label={column.title}>
+          <h2 class="text-sm font-bold uppercase tracking-wider text-white">{column.title}</h2>
+          <ul class="mt-4 grid gap-2.5 text-sm">
+            {column.links.map((link) => (
+              <li>
+                <a href={link.href} class="hover:text-white hover:underline underline-offset-2">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))}
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <div class="container-page flex flex-col gap-3 py-6 text-xs sm:flex-row sm:items-center sm:justify-between">
+      <p>
+        © {year} {SITE.name}. Fırsat bilgileri ilgili iş ortaklarına aittir; son koşullar satıcı sayfasında geçerlidir.
+      </p>
+      {ANALYTICS.ga4Id && (
+        <button type="button" class="self-start underline underline-offset-2 hover:text-white" data-consent-open>
+          Çerez tercihleri
+        </button>
+      )}
+    </div>
+  </div>
+</footer>

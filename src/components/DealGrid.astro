@@ -1,0 +1,24 @@
+---
+import DealCard from './DealCard.astro';
+import type { Deal } from '../lib/deals/schema';
+
+interface Props {
+  deals: readonly Deal[];
+  placement: string;
+  eagerCount?: number;
+  columns?: 3 | 4;
+  headingLevel?: 'h2' | 'h3';
+}
+const { deals, placement, eagerCount = 0, columns = 4, headingLevel = 'h3' } = Astro.props;
+---
+
+<div
+  class:list={[
+    'grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5',
+    columns === 4 ? 'lg:grid-cols-3 xl:grid-cols-4' : 'lg:grid-cols-3',
+  ]}
+>
+  {deals.map((deal, index) => (
+    <DealCard deal={deal} placement={placement} eager={index < eagerCount} headingLevel={headingLevel} />
+  ))}
+</div>

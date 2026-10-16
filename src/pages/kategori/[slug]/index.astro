@@ -1,0 +1,15 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CategoryView from '../../../components/CategoryView.astro';
+import { CATEGORIES } from '../../../config/categories';
+import { getDeals } from '../../../lib/deals/repository';
+import { dealsForCategory } from '../../../lib/deals/pages';
+
+export const getStaticPaths = (() =>
+  CATEGORIES.map((category) => ({ params: { slug: category.slug }, props: { category } }))) satisfies GetStaticPaths;
+
+const { category } = Astro.props;
+const { deals } = await getDeals();
+---
+
+<CategoryView category={category} deals={dealsForCategory(deals, category.slug)} page={1} />

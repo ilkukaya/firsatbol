@@ -1,0 +1,7 @@
+dist
+.astro
+node_modules
+fixtures
+src/content
+package-lock.json
+dist-empty

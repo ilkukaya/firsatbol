@@ -1,0 +1,93 @@
+---
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AttributionNotice from '../../components/AttributionNotice.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import DealGrid from '../../components/DealGrid.astro';
+import EmptyDeals from '../../components/EmptyDeals.astro';
+import Icon from '../../components/Icon.astro';
+import { CATEGORIES } from '../../config/categories';
+import { getDeals } from '../../lib/deals/repository';
+import { MIN_CITY_INDEX, MIN_COMBO_PAGE, citiesWithDeals, countBy, type CityEntry } from '../../lib/deals/taxonomy';
+import { sortEntries, toIndexEntry } from '../../lib/deals/query';
+import { breadcrumbJsonLd } from '../../lib/seo';
+
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return citiesWithDeals(deals).map((city) => ({ params: { slug: city.slug }, props: { city } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  city: CityEntry;
+}
+const { city } = Astro.props;
+const { deals } = await getDeals();
+const byId = new Map(deals.map((deal) => [deal.id, deal]));
+const cityDeals = sortEntries(deals.filter((deal) => deal.citySlug === city.slug).map(toIndexEntry)).map((entry) => byId.get(entry.id)!);
+const shown = cityDeals.slice(0, 48);
+const perCategory = countBy(cityDeals, (deal) => deal.category);
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Şehirler', path: '/firsatlar/' },
+  { name: city.name, path: `/sehir/${city.slug}/` },
+];
+const intro =
+  city.intro ??
+  `${city.name} için iş ortaklarımızdan gelen güncel fırsatları burada listeliyoruz. Fırsatların geçerli olduğu ilçe ve şubeyi satın almadan önce kontrol etmeyi unutmayın.`;
+---
+
+<BaseLayout
+  title={`${city.name} Fırsatları ve Kampanyaları`}
+  description={`${city.name} için yeme içme, güzellik, etkinlik ve konaklama fırsatları. ${city.count > 0 ? `${city.count} güncel fırsatı` : 'Güncel fırsatları'} kategori ve ilçe bilgisiyle inceleyin.`}
+  canonical={`/sehir/${city.slug}/`}
+  noindex={city.count < MIN_CITY_INDEX}
+  jsonLd={[breadcrumbJsonLd(crumbs)]}
+>
+  <section class="border-b border-line bg-white">
+    <div class="container-page py-8 sm:py-10">
+      <Breadcrumbs crumbs={crumbs} />
+      <div class="mt-5 max-w-3xl">
+        <p class="flex items-center gap-2 text-sm font-semibold text-muted">
+          <Icon name="pin" size={17} class="text-brand-text" />
+          {city.count > 0 ? `${city.count} güncel fırsat` : 'Güncel fırsat bekleniyor'}
+        </p>
+        <h1 class="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">{city.name} fırsatları</h1>
+        <p class="mt-4 text-[1.05rem] leading-relaxed text-ink-2">{intro}</p>
+      </div>
+      {perCategory.size > 0 && (
+        <ul class="mt-6 flex flex-wrap gap-2">
+          {CATEGORIES.filter((category) => perCategory.has(category.slug)).map((category) => {
+            const count = perCategory.get(category.slug)!;
+            const href =
+              count >= MIN_COMBO_PAGE
+                ? `/kategori/${category.slug}/${city.slug}/`
+                : `/firsatlar/?kategori=${category.slug}&sehir=${city.slug}`;
+            return (
+              <li>
+                <a href={href} class="chip">
+                  <Icon name={category.icon} size={15} class="text-brand-text" />
+                  {category.shortName} <span class="text-xs text-muted">{count}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  </section>
+  <div class="container-page py-10">
+    {shown.length > 0 ? (
+      <DealGrid deals={shown} placement={`city-${city.slug}`} eagerCount={2} />
+    ) : (
+      <EmptyDeals context={`${city.name} için şu anda yetkili kaynaklarımızdan gelen yayında bir fırsat bulunmuyor.`} />
+    )}
+    {cityDeals.length > shown.length && (
+      <div class="mt-8 text-center">
+        <a href={`/firsatlar/?sehir=${city.slug}`} class="btn-ghost">
+          {city.name} için tüm {cityDeals.length} fırsatı gör
+        </a>
+      </div>
+    )}
+    <AttributionNotice deals={cityDeals} class="mt-10" />
+  </div>
+</BaseLayout>

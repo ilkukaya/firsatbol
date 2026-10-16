@@ -1,0 +1,62 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import ControllerBox from '../components/ControllerBox.astro';
+import { formatDate } from '../lib/format';
+import { breadcrumbJsonLd, type Crumb } from '../lib/seo';
+
+interface Props {
+  title: string;
+  description: string;
+  updatedAt?: Date | undefined;
+  crumbs: Crumb[];
+  showControllerBox?: boolean;
+  legalReview?: boolean;
+  jsonLd?: Record<string, unknown>[];
+  ogType?: 'website' | 'article';
+  publishedTime?: string | undefined;
+  modifiedTime?: string | undefined;
+}
+const {
+  title,
+  description,
+  updatedAt,
+  crumbs,
+  showControllerBox = false,
+  legalReview = false,
+  jsonLd = [],
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  jsonLd={[breadcrumbJsonLd(crumbs), ...jsonLd]}
+  ogType={ogType}
+  {...(publishedTime ? { publishedTime } : {})}
+  {...(modifiedTime ? { modifiedTime } : {})}
+>
+  <div class="container-page py-8 sm:py-12">
+    <Breadcrumbs crumbs={crumbs} />
+    <div class="mx-auto mt-6 max-w-3xl">
+      <slot name="before-title" />
+      <h1 class="font-display text-[2rem] font-extrabold leading-tight tracking-tight sm:text-[2.6rem]">{title}</h1>
+      {updatedAt && <p class="mt-3 text-sm text-muted">Son güncelleme: {formatDate(updatedAt)}</p>}
+      {legalReview && (
+        <p class="mt-5 rounded-xl border border-line bg-white px-4 py-3 text-sm text-ink-2">
+          Bu metin yürürlükteki mevzuat dikkate alınarak hazırlanmıştır ve hukuki inceleme sonrasında güncellenebilir.
+        </p>
+      )}
+      {showControllerBox && <ControllerBox />}
+      <slot name="intro" />
+      <div class="prose-fb mt-8">
+        <slot />
+      </div>
+      <slot name="after" />
+    </div>
+    <slot name="below" />
+  </div>
+</BaseLayout>

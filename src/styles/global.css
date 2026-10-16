@@ -1,0 +1,163 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Bricolage Grotesque Variable', 'Plus Jakarta Sans Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #0f1b2d;
+  --color-ink-2: #2a3647;
+  --color-muted: #5b6474;
+  --color-canvas: #f7f5f2;
+  --color-sand: #efe9e1;
+  --color-line: #e7e2db;
+  --color-card: #ffffff;
+
+  --color-brand: #ff6a1a;
+  --color-brand-50: #fff4ec;
+  --color-brand-100: #ffe4d1;
+  --color-cta: #cc4a0e;
+  --color-cta-hover: #ad3e0a;
+  --color-brand-text: #b23c0a;
+
+  --color-save: #15803d;
+  --color-save-bg: #ecfdf3;
+  --color-sun: #ffcf3f;
+
+  --radius-card: 1.125rem;
+  --shadow-card: 0 1px 2px rgb(15 27 45 / 0.05), 0 6px 24px -12px rgb(15 27 45 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(15 27 45 / 0.06), 0 18px 40px -18px rgb(15 27 45 / 0.28);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 5.5rem;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-[0.95rem] font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility btn-cta {
+  @apply btn bg-cta text-white hover:bg-cta-hover;
+}
+@utility btn-dark {
+  @apply btn bg-ink text-white hover:bg-ink-2;
+}
+@utility btn-ghost {
+  @apply btn border border-line bg-white text-ink hover:border-ink/30;
+}
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-3.5 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink/30 hover:text-ink;
+}
+@utility card {
+  @apply rounded-[var(--radius-card)] border border-line bg-card shadow-[var(--shadow-card)];
+}
+@utility eyebrow {
+  @apply text-xs font-bold uppercase tracking-[0.14em] text-brand-text;
+}
+@utility section-title {
+  @apply font-display text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem];
+}
+@utility field {
+  @apply w-full rounded-xl border border-line bg-white px-3.5 py-2.5 text-[0.95rem] text-ink placeholder:text-muted/80 focus:border-ink/40 focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-brand/20;
+}
+@utility label {
+  @apply mb-1.5 block text-sm font-semibold text-ink-2;
+}
+
+/* Long-form content (guides, legal pages) */
+.prose-fb {
+  @apply text-[1.0625rem] leading-[1.75] text-ink-2;
+}
+.prose-fb > * + * {
+  margin-top: 1.1em;
+}
+.prose-fb h2 {
+  @apply font-display mt-10 text-[1.6rem] font-bold leading-tight tracking-tight text-ink;
+}
+.prose-fb h3 {
+  @apply mt-8 text-[1.2rem] font-bold leading-snug text-ink;
+}
+.prose-fb a {
+  @apply font-semibold text-brand-text underline decoration-brand/40 underline-offset-[3px] hover:decoration-brand-text;
+}
+.prose-fb ul,
+.prose-fb ol {
+  @apply pl-6;
+}
+.prose-fb ul {
+  list-style: disc;
+}
+.prose-fb ol {
+  list-style: decimal;
+}
+.prose-fb li + li {
+  margin-top: 0.4em;
+}
+.prose-fb li::marker {
+  color: var(--color-brand-text);
+}
+.prose-fb ul.contains-task-list {
+  @apply list-none pl-1;
+}
+.prose-fb .task-list-item input {
+  @apply mr-2 align-middle accent-[var(--color-cta)];
+}
+.prose-fb strong {
+  @apply font-bold text-ink;
+}
+.prose-fb blockquote {
+  @apply rounded-r-xl border-l-4 border-brand bg-brand-50 px-5 py-3 text-ink-2;
+}
+.prose-fb table {
+  @apply block w-full overflow-x-auto text-[0.95rem];
+  border-collapse: collapse;
+}
+.prose-fb th,
+.prose-fb td {
+  @apply border border-line px-3 py-2 text-left align-top;
+}
+.prose-fb th {
+  @apply bg-sand font-semibold text-ink;
+}
+.prose-fb hr {
+  @apply my-10 border-line;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Expired deals (client-side check between data refreshes) */
+[data-expired='true'] .deal-cta {
+  pointer-events: none;
+  opacity: 0.5;
+}

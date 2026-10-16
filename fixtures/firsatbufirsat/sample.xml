@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SENTETİK GELİŞTİRME VERİSİ — gerçek fırsat değildir; gerçek API şeması doğrulanmadı. -->
+<response>
+  <deals>
+    <deal>
+      <id>2001</id>
+      <title>ÖRNEK VERİ — XML kahvaltı fırsatı</title>
+      <merchant>Örnek Kafe</merchant>
+      <category>Kahvaltı</category>
+      <city>İZMİR</city>
+      <originalPrice>1.000,00</originalPrice>
+      <discountedPrice>650,00</discountedPrice>
+      <endDate>31.12.2026</endDate>
+      <link>https://example.com/x/2001</link>
+      <description><![CDATA[<p>XML örnek &amp; açıklama</p>]]></description>
+    </deal>
+    <deal>
+      <id>2002</id>
+      <title>ÖRNEK VERİ — XML masaj fırsatı</title>
+      <category>Spa</category>
+      <city>Ankara</city>
+      <price currency="TRY">500</price>
+      <link>https://example.com/x/2002</link>
+    </deal>
+  </deals>
+</response>

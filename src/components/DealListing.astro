@@ -1,0 +1,190 @@
+---
+import DealCard from './DealCard.astro';
+import EmptyDeals from './EmptyDeals.astro';
+import Icon from './Icon.astro';
+import Pagination from './Pagination.astro';
+import { CATEGORIES } from '../config/categories';
+import type { Deal } from '../lib/deals/schema';
+import { SORT_OPTIONS, merchantKey } from '../lib/deals/query';
+import { categoryCounts, citiesWithDeals, merchantsOf } from '../lib/deals/taxonomy';
+
+interface Props {
+  /** All published deals (filter options + client index). */
+  deals: readonly Deal[];
+  /** Server-rendered page of deals (no-JS and crawlers). */
+  pageDeals: readonly Deal[];
+  page: number;
+  totalPages: number;
+  base: string;
+  placement: 'listing' | 'search';
+  /** Render from the client index immediately (search page). */
+  alwaysRender?: boolean;
+}
+const { deals, pageDeals, page, totalPages, base, placement, alwaysRender = false } = Astro.props;
+const counts = categoryCounts(deals);
+const cities = citiesWithDeals(deals).filter((city) => city.count > 0);
+const merchants = merchantsOf(deals).slice(0, 80);
+const categoryNames = Object.fromEntries(CATEGORIES.map((category) => [category.slug, category.shortName]));
+const query = Astro.url.searchParams.get('q') ?? '';
+---
+
+<div data-listing={placement} data-categories={JSON.stringify(categoryNames)} data-always-render={alwaysRender ? 'true' : 'false'}>
+  {/* icon templates for client-rendered cards */}
+  <template data-icon="pin">
+    <Icon name="pin" size={14} />
+  </template>
+  <template data-icon="clock">
+    <Icon name="clock" size={14} />
+  </template>
+  <template data-icon="external">
+    <Icon name="external" size={15} />
+  </template>
+  {CATEGORIES.map((category) => (
+    <template data-icon={`cat-${category.slug}`}>
+      <Icon name={category.icon} size={44} strokeWidth={1.5} />
+    </template>
+  ))}
+
+  <form
+    action={placement === 'search' ? '/arama/' : '/firsatlar/'}
+    method="get"
+    class="card mb-6 p-4 sm:p-5"
+    data-filter-form
+    role="search"
+  >
+    <div class="grid gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
+      <div>
+        <label for="f-q" class="label">
+          Ara
+        </label>
+        <div class="relative">
+          <Icon name="search" size={17} class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+          <input
+            id="f-q"
+            name="q"
+            type="search"
+            value={query}
+            placeholder="Fırsat, mekân, ilçe…"
+            class="field pl-10"
+            autocomplete="off"
+            enterkeyhint="search"
+          />
+        </div>
+      </div>
+      <button
+        type="button"
+        class="btn-ghost hidden w-full text-sm max-lg:inline-flex"
+        aria-expanded="true"
+        aria-controls="filter-panel"
+        data-filter-toggle
+      >
+        <Icon name="filter" size={17} /> Filtreler ve sıralama
+      </button>
+      <div id="filter-panel" class="grid gap-3 lg:contents" data-filter-panel>
+        <div>
+          <label for="f-kategori" class="label">
+            Kategori
+          </label>
+          <select id="f-kategori" name="kategori" class="field">
+            <option value="">Tümü</option>
+            {CATEGORIES.filter((c) => (counts.get(c.slug) ?? 0) > 0).map((category) => (
+              <option value={category.slug}>
+                {category.name} ({counts.get(category.slug)})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label for="f-sehir" class="label">
+            Şehir
+          </label>
+          <select id="f-sehir" name="sehir" class="field">
+            <option value="">Tümü</option>
+            {cities.map((city) => (
+              <option value={city.slug}>
+                {city.name} ({city.count})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label for="f-magaza" class="label">
+            Satıcı
+          </label>
+          <select id="f-magaza" name="magaza" class="field">
+            <option value="">Tümü</option>
+            {merchants.map((merchant) => (
+              <option value={merchantKey(merchant.name)}>
+                {merchant.name} ({merchant.count})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label for="f-sirala" class="label">
+            Sırala
+          </label>
+          <select id="f-sirala" name="sirala" class="field">
+            {SORT_OPTIONS.map((option) => (
+              <option value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button type="submit" class="btn-dark h-[2.875rem] flex-1 lg:flex-none">
+            Uygula
+          </button>
+          <button type="button" class="btn-ghost h-[2.875rem]" data-reset>
+            Temizle
+          </button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <p class="mb-4 text-sm font-semibold text-muted" aria-live="polite" data-result-count>
+    {deals.length.toLocaleString('tr-TR')} fırsat
+  </p>
+
+  {deals.length === 0 ? (
+    <EmptyDeals />
+  ) : (
+    <>
+      <div class="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4" data-results>
+        {pageDeals.map((deal, index) => (
+          <DealCard deal={deal} placement={placement} eager={index < 2} />
+        ))}
+      </div>
+      <div class="hidden" data-no-results>
+        <div class="card p-6 text-center">
+          <p class="font-display text-lg font-bold">Bu filtrelerle eşleşen fırsat bulunamadı.</p>
+          <p class="mt-1 text-sm text-muted">Filtreleri azaltmayı ya da farklı bir arama yapmayı deneyin.</p>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-center">
+        <button type="button" class="btn-ghost hidden" data-load-more>
+          Daha fazla göster
+        </button>
+      </div>
+      <div data-static-pagination>
+        <Pagination page={page} totalPages={totalPages} base={base} />
+      </div>
+    </>
+  )}
+</div>
+
+<script>
+  import '../scripts/listing';
+  // collapse the filter panel on small screens (it stays visible without JS)
+  const toggle = document.querySelector<HTMLButtonElement>('[data-filter-toggle]');
+  const panel = document.querySelector<HTMLElement>('[data-filter-panel]');
+  if (toggle && panel) {
+    const hasFilters = ['kategori', 'sehir', 'magaza', 'sirala'].some((key) => new URLSearchParams(location.search).has(key));
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      panel.classList.toggle('max-lg:hidden', !open);
+    };
+    setOpen(hasFilters);
+    toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  }
+</script>

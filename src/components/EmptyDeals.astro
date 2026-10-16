@@ -1,0 +1,37 @@
+---
+/**
+ * Honest empty state: shown when no verified deal is available for a listing.
+ * Never replaced with placeholder/fake cards.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  title?: string;
+  context?: string;
+  showGuides?: boolean;
+}
+const { title = 'Şu anda burada yayında fırsat yok', context, showGuides = true } = Astro.props;
+---
+
+<div class="card flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:p-8">
+  <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand-text">
+    <Icon name="refresh" size={28} />
+  </div>
+  <div class="flex-1">
+    <h2 class="font-display text-xl font-bold">{title}</h2>
+    <p class="mt-1.5 max-w-2xl text-[0.97rem] leading-relaxed text-muted">
+      {context ?? 'Fırsatlar yalnızca yetkili iş ortaklarımızdan geldiğinde ve doğrulanabildiğinde yayınlanır.'} Fırsat akışı düzenli olarak
+      yenilenir; boş görünen alanları örnek kartlarla doldurmuyoruz.
+    </p>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <a href="/firsatlar/" class="btn-dark text-sm">
+        Tüm fırsatlara bak
+      </a>
+      {showGuides && (
+        <a href="/rehber/" class="btn-ghost text-sm">
+          Alışveriş rehberlerini oku
+        </a>
+      )}
+    </div>
+  </div>
+</div>

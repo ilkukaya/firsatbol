@@ -1,0 +1,122 @@
+---
+import Icon from './Icon.astro';
+import { getCategory } from '../config/categories';
+import { formatDate, formatPrice } from '../lib/format';
+import type { Deal } from '../lib/deals/schema';
+
+interface Props {
+  deal: Deal;
+  placement: string;
+  /** Load the image eagerly (first row above the fold). */
+  eager?: boolean;
+  headingLevel?: 'h2' | 'h3';
+}
+const { deal, placement, eager = false, headingLevel = 'h3' } = Astro.props;
+const Heading = headingLevel;
+const category = getCategory(deal.category);
+const outbound = deal.affiliateUrl ?? deal.sourceUrl;
+const location = [deal.district, deal.city].filter(Boolean).join(', ');
+const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price;
+---
+
+<article
+  class="card group relative flex flex-col overflow-hidden transition-shadow duration-200 hover:shadow-[var(--shadow-lift)]"
+  data-valid-until={deal.validUntil ?? undefined}
+>
+  <div class="relative aspect-[16/10] overflow-hidden bg-sand">
+    {deal.imageUrl ? (
+      <img
+        src={deal.imageUrl}
+        alt=""
+        width="480"
+        height="300"
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : 'auto'}
+        decoding="async"
+        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+      />
+    ) : (
+      <div class="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-50 to-sand text-brand-text">
+        <Icon name={category?.icon ?? 'tag'} size={44} strokeWidth={1.5} />
+      </div>
+    )}
+    {deal.discountPercent !== null && (
+      <span class="absolute left-3 top-3 rounded-full bg-save px-2.5 py-1 text-sm font-extrabold text-white shadow-sm">
+        %{deal.discountPercent} indirim
+      </span>
+    )}
+    <span data-expired-note class="absolute inset-x-0 bottom-0 hidden bg-ink/85 py-1.5 text-center text-sm font-semibold text-white">
+      Süresi doldu
+    </span>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-2 p-4">
+    <div class="flex items-center gap-2 text-xs font-semibold text-muted">
+      {deal.merchant && <span class="truncate">{deal.merchant}</span>}
+      {deal.merchant && category && <span aria-hidden="true">·</span>}
+      {category && (
+        <span class="shrink-0 text-brand-text" data-card-category>
+          {category.shortName}
+        </span>
+      )}
+    </div>
+    <Heading class="text-[1.02rem] font-bold leading-snug text-ink">
+      <a href={`/firsat/${deal.slug}/`} class="line-clamp-2 after:absolute after:inset-0 after:content-[''] focus:outline-none">
+        {deal.title}
+      </a>
+    </Heading>
+    {(location || deal.validUntil) && (
+      <ul class="flex flex-wrap gap-x-3 gap-y-1 text-[0.82rem] text-muted">
+        {location && (
+          <li class="flex min-w-0 items-center gap-1">
+            <Icon name="pin" size={14} />
+            <span class="truncate">{location}</span>
+          </li>
+        )}
+        {deal.validUntil && (
+          <li class="flex items-center gap-1">
+            <Icon name="clock" size={14} />
+            Son gün {formatDate(deal.validUntil)}
+          </li>
+        )}
+      </ul>
+    )}
+    <div class="mt-auto flex items-center justify-between gap-3 border-t border-line/70 pt-3">
+      <div class="min-w-0">
+        {deal.price !== null ? (
+          <p class="flex flex-col leading-tight">
+            {showOriginal && (
+              <span class="text-[0.8rem] text-muted line-through">
+                <span class="sr-only">Önceki fiyat:</span>
+                {formatPrice(deal.originalPrice!, deal.currency)}
+              </span>
+            )}
+            <span class="text-xl font-extrabold tracking-tight text-ink">{formatPrice(deal.price, deal.currency)}</span>
+          </p>
+        ) : (
+          <p class="text-sm font-medium leading-tight text-muted">
+            Fiyat satıcı
+            <br />
+            sayfasında
+          </p>
+        )}
+      </div>
+      <a
+        href={outbound}
+        target="_blank"
+        rel="sponsored nofollow noopener"
+        class="deal-cta btn-cta relative z-10 shrink-0 px-4 py-2 text-sm"
+        data-deal-link
+        data-deal-id={deal.id}
+        data-provider={deal.provider}
+        data-category={deal.category}
+        data-city={deal.citySlug ?? undefined}
+        data-placement={placement}
+      >
+        Fırsatı Gör<span class="sr-only"> ({deal.merchant ?? deal.providerName} sitesinde, yeni sekmede açılır)</span>
+        <Icon name="external" size={15} />
+      </a>
+    </div>
+    <p class="text-[0.7rem] text-muted">Kaynak: {deal.providerName}</p>
+  </div>
+</article>

@@ -1,0 +1,39 @@
+---
+import ProseLayout from '../../layouts/ProseLayout.astro';
+import NewsletterForm from '../../components/NewsletterForm.astro';
+import { FEATURES } from '../../config/site';
+
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Bülten', path: '/bulten/' },
+];
+---
+
+<ProseLayout
+  title="Haftanın En İyi Fırsatları Bülteni"
+  description="FırsatBol bülteni: haftada en fazla bir e-postayla öne çıkan fırsatlar ve yeni rehberler. Açık onayla abonelik, her e-postada tek tıkla ayrılma."
+  crumbs={crumbs}
+>
+  <Fragment slot="intro">
+    <div class="mt-8">
+      <NewsletterForm variant="card" />
+    </div>
+  </Fragment>
+  <h2>Bülten nasıl çalışır?</h2>
+  <ul>
+    <li>Yalnızca açık onay verdiğiniz takdirde ve e-postanızdaki onay bağlantısına tıkladığınızda abone olursunuz (çift onay).</li>
+    <li>Haftada en fazla bir e-posta gönderilir: öne çıkan fırsatlar ve yeni yayımlanan rehberler.</li>
+    <li>E-posta adresiniz üçüncü kişilere satılmaz ve yalnızca bülten gönderimi için kullanılır.</li>
+  </ul>
+  <h2>Abonelikten nasıl ayrılırım?</h2>
+  <p>
+    Gönderdiğimiz her e-postanın altında yer alan “abonelikten çık” bağlantısıyla tek tıkla ayrılabilirsiniz. Bağlantıya ulaşamıyorsanız{' '}
+    <a href="/iletisim/">iletişim formu</a> üzerinden “KVKK başvurusu” konusunu seçerek talepte bulunabilirsiniz; onayınız geri alınır ve
+    size ticari ileti gönderilmez.
+  </p>
+  {!FEATURES.newsletter && (
+    <p>
+      <strong>Not:</strong> Bülten altyapısı henüz etkin değildir; şu anda e-posta adresi toplanmamaktadır.
+    </p>
+  )}
+</ProseLayout>

@@ -1,0 +1,12 @@
+---
+import ListingPage from '../../components/ListingPage.astro';
+import { getDeals } from '../../lib/deals/repository';
+import { paginate, sortEntries, toIndexEntry } from '../../lib/deals/query';
+
+const { deals } = await getDeals();
+const byId = new Map(deals.map((deal) => [deal.id, deal]));
+const ordered = sortEntries(deals.map(toIndexEntry)).map((entry) => byId.get(entry.id)!);
+const { items, totalPages } = paginate(ordered, 1);
+---
+
+<ListingPage deals={deals} pageDeals={items} page={1} totalPages={totalPages} />

@@ -1,0 +1,121 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import ProseLayout from '../../layouts/ProseLayout.astro';
+import DealGrid from '../../components/DealGrid.astro';
+import GuideCard from '../../components/GuideCard.astro';
+import Icon from '../../components/Icon.astro';
+import AttributionNotice from '../../components/AttributionNotice.astro';
+import { getCategory } from '../../config/categories';
+import { getDeals } from '../../lib/deals/repository';
+import { readingMinutes } from '../../lib/content';
+import { formatDate } from '../../lib/format';
+import { articleJsonLd } from '../../lib/seo';
+
+export const getStaticPaths = (async () => {
+  const guides = await getCollection('guides', (entry) => !entry.data.draft);
+  return guides.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const path = `/rehber/${entry.id}/`;
+const minutes = readingMinutes(entry.body ?? '');
+const { deals } = await getDeals();
+const related = deals.filter((deal) => entry.data.relatedCategories.includes(deal.category)).slice(0, 3);
+const otherGuides = (await getCollection('guides', (other) => !other.data.draft && other.id !== entry.id)).slice(0, 3);
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Rehberler', path: '/rehber/' },
+  { name: entry.data.title, path },
+];
+---
+
+<ProseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  crumbs={crumbs}
+  ogType="article"
+  publishedTime={entry.data.publishedAt.toISOString()}
+  modifiedTime={(entry.data.updatedAt ?? entry.data.publishedAt).toISOString()}
+  jsonLd={[
+    articleJsonLd({
+      title: entry.data.title,
+      description: entry.data.description,
+      path,
+      publishedAt: entry.data.publishedAt,
+      updatedAt: entry.data.updatedAt,
+    }),
+  ]}
+>
+  <p slot="before-title" class="eyebrow mb-3">
+    Alışveriş rehberi · {minutes} dk okuma
+  </p>
+  <Fragment slot="intro">
+    <p class="mt-3 text-sm text-muted">
+      Yayın: {formatDate(entry.data.publishedAt)}
+      {entry.data.updatedAt && ` · Güncelleme: ${formatDate(entry.data.updatedAt)}`} · Hazırlayan: FırsatBol
+    </p>
+    <p class="mt-5 text-lg leading-relaxed text-ink-2">{entry.data.description}</p>
+    {entry.data.keyPoints.length > 0 && (
+      <aside class="mt-6 rounded-2xl bg-white p-5 ring-1 ring-line" aria-labelledby="ozet">
+        <h2 id="ozet" class="flex items-center gap-2 font-bold">
+          <Icon name="sparkles" size={18} class="text-brand-text" />
+          Kısaca
+        </h2>
+        <ul class="mt-3 grid gap-2 text-[0.97rem] text-ink-2">
+          {entry.data.keyPoints.map((point) => (
+            <li class="flex gap-2.5">
+              <Icon name="check" size={18} class="mt-0.5 shrink-0 text-save" />
+              {point}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+  </Fragment>
+  <Content />
+  <Fragment slot="after">
+    {entry.data.relatedCategories.length > 0 && (
+      <nav class="mt-10 flex flex-wrap gap-2" aria-label="İlgili kategoriler">
+        {entry.data.relatedCategories.map((slug) => {
+          const category = getCategory(slug);
+          return (
+            category && (
+              <a href={`/kategori/${slug}/`} class="chip">
+                <Icon name={category.icon} size={15} class="text-brand-text" />
+                {category.name}
+              </a>
+            )
+          );
+        })}
+      </nav>
+    )}
+  </Fragment>
+  <div slot="below" class="pb-4">
+    {related.length > 0 && (
+      <section class="mt-6" aria-labelledby="ilgili-firsatlar">
+        <h2 id="ilgili-firsatlar" class="section-title mb-6">
+          İlgili fırsatlar
+        </h2>
+        <DealGrid deals={related} placement="guide-related" columns={3} />
+        <AttributionNotice deals={related} class="mt-6" />
+      </section>
+    )}
+    <section class="mt-14" aria-labelledby="diger-rehberler">
+      <h2 id="diger-rehberler" class="section-title mb-6">
+        Diğer rehberler
+      </h2>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {otherGuides.map((guide) => (
+          <GuideCard
+            title={guide.data.title}
+            description={guide.data.description}
+            href={`/rehber/${guide.id}/`}
+            minutes={readingMinutes(guide.body ?? '')}
+          />
+        ))}
+      </div>
+    </section>
+  </div>
+</ProseLayout>

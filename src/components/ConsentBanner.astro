@@ -1,0 +1,31 @@
+---
+/** Shown only when GA4 is configured. Default is "no consent": nothing is loaded until accepted. */
+---
+
+<div
+  class="fixed inset-x-3 bottom-3 z-50 mx-auto hidden max-w-xl rounded-2xl border border-line bg-white p-5 shadow-[var(--shadow-lift)]"
+  role="dialog"
+  aria-live="polite"
+  aria-labelledby="consent-title"
+  data-consent-banner
+>
+  <h2 id="consent-title" class="font-display text-lg font-bold">
+    Çerez tercihleriniz
+  </h2>
+  <p class="mt-2 text-sm leading-relaxed text-ink-2">
+    Sitemizi iyileştirmek için, yalnızca izin verirseniz Google Analytics çerezlerini kullanırız. Zorunlu olmayan hiçbir çerez onayınız
+    olmadan yüklenmez. Ayrıntılar için{' '}
+    <a class="font-semibold text-brand-text underline" href="/cerez-politikasi/">
+      Çerez Politikası
+    </a>
+    .
+  </p>
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button type="button" class="btn-dark" data-consent="granted">
+      Kabul et
+    </button>
+    <button type="button" class="btn-ghost" data-consent="denied">
+      Reddet
+    </button>
+  </div>
+</div>

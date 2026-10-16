@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Icon from '../../../components/Icon.astro';
+---
+
+<BaseLayout
+  title="Mesajınız alındı"
+  description="İletişim formu üzerinden gönderdiğiniz mesaj FırsatBol’a ulaştı. Talebinizi en kısa sürede yanıtlamaya çalışacağız."
+  noindex
+>
+  <div class="container-page py-20 text-center">
+    <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-save-bg text-save">
+      <Icon name="check" size={32} />
+    </span>
+    <h1 class="mt-6 font-display text-3xl font-extrabold">Teşekkürler, mesajınız alındı</h1>
+    <p class="mx-auto mt-3 max-w-lg text-muted">Talebinizi inceleyip belirttiğiniz e-posta adresi üzerinden size dönüş yapacağız.</p>
+    <a href="/" class="btn-dark mt-8">
+      Ana sayfaya dön
+    </a>
+  </div>
+</BaseLayout>

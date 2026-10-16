@@ -1,0 +1,156 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AttributionNotice from './AttributionNotice.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DealGrid from './DealGrid.astro';
+import EmptyDeals from './EmptyDeals.astro';
+import GuideCard from './GuideCard.astro';
+import Icon from './Icon.astro';
+import Pagination from './Pagination.astro';
+import AdSlot from './AdSlot.astro';
+import type { Category } from '../config/categories';
+import type { Deal } from '../lib/deals/schema';
+import { MIN_COMBO_PAGE, countBy } from '../lib/deals/taxonomy';
+import { paginate } from '../lib/deals/query';
+import { readingMinutes } from '../lib/content';
+import { breadcrumbJsonLd, itemListJsonLd } from '../lib/seo';
+
+interface Props {
+  category: Category;
+  /** All deals in the category (already sorted). */
+  deals: readonly Deal[];
+  page: number;
+  /** Optional city scope for /kategori/<slug>/<city>/ pages. */
+  city?: { slug: string; name: string } | undefined;
+}
+const { category, deals, page, city } = Astro.props;
+const base = city ? `/kategori/${category.slug}/${city.slug}/` : `/kategori/${category.slug}/`;
+const { items, totalPages } = paginate(deals, page);
+const canonical = page > 1 ? `${base}sayfa/${page}/` : base;
+
+const cityCounts = city ? new Map<string, number>() : countBy(deals, (deal) => deal.citySlug);
+const cityNames = new Map(deals.filter((d) => d.citySlug && d.city).map((d) => [d.citySlug!, d.city!]));
+const cityLinks = [...cityCounts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .map(([slug, count]) => ({
+    slug,
+    count,
+    name: cityNames.get(slug) ?? slug,
+    href: count >= MIN_COMBO_PAGE ? `/kategori/${category.slug}/${slug}/` : `/firsatlar/?kategori=${category.slug}&sehir=${slug}`,
+  }));
+
+const guides = (await getCollection('guides', (entry) => !entry.data.draft && entry.data.relatedCategories.includes(category.slug))).slice(
+  0,
+  3,
+);
+
+const heading = city ? `${city.name} ${category.name} Fırsatları` : `${category.name} Fırsatları`;
+const title = city ? `${city.name} ${category.metaTitle}` : category.metaTitle;
+const description = city
+  ? `${city.name} için ${category.name.toLocaleLowerCase('tr-TR')} kampanyaları ve indirimleri. ${deals.length} güncel fırsatı fiyat ve geçerlilik bilgisiyle inceleyin.`
+  : category.metaDescription;
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: category.name, path: `/kategori/${category.slug}/` },
+  ...(city ? [{ name: city.name, path: base }] : []),
+  ...(page > 1 ? [{ name: `Sayfa ${page}`, path: canonical }] : []),
+];
+---
+
+<BaseLayout
+  title={page > 1 ? `${title} — Sayfa ${page}` : title}
+  description={description}
+  canonical={canonical}
+  noindex={deals.length === 0}
+  jsonLd={[
+    breadcrumbJsonLd(crumbs),
+    ...(items.length
+      ? [
+          itemListJsonLd(
+            heading,
+            items.map((d) => ({ name: d.title, path: `/firsat/${d.slug}/` })),
+          ),
+        ]
+      : []),
+  ]}
+>
+  <section class="border-b border-line bg-white">
+    <div class="container-page py-8 sm:py-10">
+      <Breadcrumbs crumbs={crumbs} />
+      <div class="mt-5 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div class="max-w-3xl">
+          <div class="flex items-center gap-3">
+            <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-text">
+              <Icon name={category.icon} size={26} />
+            </span>
+            <p class="text-sm font-semibold text-muted">
+              {deals.length > 0 ? `${deals.length} güncel fırsat` : 'Güncel fırsat bekleniyor'}
+            </p>
+          </div>
+          <h1 class="mt-4 font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">{heading}</h1>
+          {page === 1 && <p class="mt-4 text-[1.05rem] leading-relaxed text-ink-2">{category.intro}</p>}
+        </div>
+        {page === 1 && (
+          <aside class="w-full max-w-sm rounded-2xl bg-canvas p-5 ring-1 ring-line" aria-labelledby="ipuclari">
+            <h2 id="ipuclari" class="flex items-center gap-2 font-bold">
+              <Icon name="info" size={18} class="text-brand-text" />
+              Dikkat edilecekler
+            </h2>
+            <ul class="mt-3 grid gap-2 text-sm text-ink-2">
+              {category.tips.map((tip) => (
+                <li class="flex gap-2">
+                  <Icon name="check" size={16} class="mt-0.5 shrink-0 text-save" />
+                  {tip}
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </div>
+      {cityLinks.length > 0 && (
+        <nav aria-label="Şehre göre" class="mt-6">
+          <ul class="flex flex-wrap gap-2">
+            {cityLinks.map((link) => (
+              <li>
+                <a href={link.href} class="chip">
+                  <Icon name="pin" size={15} class="text-brand-text" />
+                  {link.name} <span class="text-xs text-muted">{link.count}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+    </div>
+  </section>
+
+  <div class="container-page py-10">
+    {items.length > 0 ? (
+      <DealGrid deals={items} placement={`category-${category.slug}`} eagerCount={2} />
+    ) : (
+      <EmptyDeals context={`${category.name} kategorisinde şu anda yetkili kaynaklarımızdan gelen yayında bir fırsat bulunmuyor.`} />
+    )}
+    <Pagination page={page} totalPages={totalPages} base={base} />
+    <AdSlot id="category-bottom" />
+
+    {guides.length > 0 && page === 1 && (
+      <section class="mt-16" aria-labelledby="ilgili-rehberler">
+        <h2 id="ilgili-rehberler" class="section-title mb-6">
+          İlgili rehberler
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {guides.map((guide) => (
+            <GuideCard
+              title={guide.data.title}
+              description={guide.data.description}
+              href={`/rehber/${guide.id}/`}
+              minutes={readingMinutes(guide.body ?? '')}
+            />
+          ))}
+        </div>
+      </section>
+    )}
+    <AttributionNotice deals={deals} class="mt-10" />
+  </div>
+</BaseLayout>

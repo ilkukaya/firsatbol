@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CategoryGrid from '../components/CategoryGrid.astro';
+import Icon from '../components/Icon.astro';
+import { getDeals } from '../lib/deals/repository';
+import { categoryCounts } from '../lib/deals/taxonomy';
+
+const { deals } = await getDeals();
+---
+
+<BaseLayout
+  title="Sayfa bulunamadı"
+  description="Aradığınız sayfa bulunamadı. Fırsatın süresi dolmuş veya bağlantı değişmiş olabilir."
+  noindex
+>
+  <div class="container-page py-16">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="font-display text-7xl font-extrabold text-brand">404</p>
+      <h1 class="mt-4 font-display text-3xl font-extrabold">Bu sayfa bulunamadı</h1>
+      <p class="mt-3 text-muted">Aradığınız fırsatın süresi dolmuş ve yayından kaldırılmış ya da bağlantı değişmiş olabilir.</p>
+      <form action="/arama/" method="get" role="search" class="mx-auto mt-8 flex max-w-md gap-2">
+        <label for="nf-q" class="sr-only">
+          Fırsat ara
+        </label>
+        <input id="nf-q" name="q" type="search" class="field rounded-full" placeholder="Fırsat ara…" />
+        <button class="btn-cta shrink-0" type="submit">
+          <Icon name="search" size={18} />
+          Ara
+        </button>
+      </form>
+    </div>
+    <div class="mt-14">
+      <CategoryGrid counts={categoryCounts(deals)} />
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  href: string;
+  minutes: number;
+}
+const { title, description, href, minutes } = Astro.props;
+---
+
+<article class="card group relative flex h-full flex-col p-5 transition-shadow hover:shadow-[var(--shadow-lift)]">
+  <span class="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white">
+    <Icon name="book" size={20} />
+  </span>
+  <h3 class="font-display text-lg font-bold leading-snug">
+    <a href={href} class="after:absolute after:inset-0 after:content-['']">
+      {title}
+    </a>
+  </h3>
+  <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">{description}</p>
+  <p class="mt-auto pt-4 text-xs font-semibold text-brand-text">{minutes} dk okuma</p>
+</article>

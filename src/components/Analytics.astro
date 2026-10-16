@@ -1,0 +1,21 @@
+---
+/**
+ * Analytics loaders. All optional and configured by env vars (see .env.example):
+ *  - Plausible / Umami: cookieless, loaded directly.
+ *  - GA4: uses cookies → loaded ONLY after the visitor accepts in the consent banner.
+ *  - First-party events: anonymous beacons to /api/event (no IP or identifiers stored).
+ * window.fbTrack(name, props) fans an event out to every enabled tool.
+ */
+import { ANALYTICS } from '../config/site';
+
+const config = {
+  ga4: ANALYTICS.ga4Id ?? null,
+  firstParty: ANALYTICS.firstPartyEvents,
+};
+---
+
+{ANALYTICS.plausibleDomain && <script is:inline defer data-domain={ANALYTICS.plausibleDomain} src={ANALYTICS.plausibleSrc} />}
+{ANALYTICS.umamiWebsiteId && <script is:inline defer data-website-id={ANALYTICS.umamiWebsiteId} src={ANALYTICS.umamiSrc} />}
+<script is:inline define:vars={{ config }}>
+  window.__fbAnalytics = config;
+</script>

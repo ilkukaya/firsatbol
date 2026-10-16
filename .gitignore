@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# Netlify local state (never commit)
+.netlify/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# provider inspection output (may contain partner data)
+.cache/
+
+# test output
+test-results/
+playwright-report/
+coverage/
+
+# logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+.vscode/
+.idea/
+dist-empty/

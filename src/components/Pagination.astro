@@ -1,0 +1,42 @@
+---
+interface Props {
+  page: number;
+  totalPages: number;
+  /** Base path without page suffix, e.g. "/firsatlar/". Page n>1 → `${base}sayfa/${n}/`. */
+  base: string;
+}
+const { page, totalPages, base } = Astro.props;
+const href = (n: number) => (n <= 1 ? base : `${base}sayfa/${n}/`);
+const windowed = Array.from({ length: totalPages }, (_, index) => index + 1).filter(
+  (n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1,
+);
+---
+
+{totalPages > 1 && (
+  <nav aria-label="Sayfalar" class="mt-10 flex flex-wrap items-center justify-center gap-2">
+    {page > 1 && (
+      <a href={href(page - 1)} rel="prev" class="chip">
+        ← Önceki
+      </a>
+    )}
+    {windowed.map((n, index) => (
+      <>
+        {index > 0 && n - windowed[index - 1]! > 1 && <span class="px-1 text-muted">…</span>}
+        {n === page ? (
+          <span aria-current="page" class="chip border-ink bg-ink text-white">
+            {n}
+          </span>
+        ) : (
+          <a href={href(n)} class="chip">
+            {n}
+          </a>
+        )}
+      </>
+    ))}
+    {page < totalPages && (
+      <a href={href(page + 1)} rel="next" class="chip">
+        Sonraki →
+      </a>
+    )}
+  </nav>
+)}

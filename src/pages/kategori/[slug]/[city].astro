@@ -1,0 +1,21 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CategoryView from '../../../components/CategoryView.astro';
+import { getCategory } from '../../../config/categories';
+import { getDeals } from '../../../lib/deals/repository';
+import { categoryCityCombos, dealsForCategory } from '../../../lib/deals/pages';
+
+/** Only combinations with at least MIN_COMBO_PAGE genuine deals get a page. */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return categoryCityCombos(deals).map((combo) => ({
+    params: { slug: combo.category, city: combo.city },
+    props: { category: getCategory(combo.category)!, city: { slug: combo.city, name: combo.cityName } },
+  }));
+}) satisfies GetStaticPaths;
+
+const { category, city } = Astro.props;
+const { deals } = await getDeals();
+---
+
+<CategoryView category={category} city={city} deals={dealsForCategory(deals, category.slug, city.slug)} page={1} />

@@ -1,0 +1,120 @@
+---
+/**
+ * Newsletter signup with explicit, separate consent for commercial e-messages and double
+ * opt-in via the email provider. If the newsletter is not enabled the component says so
+ * honestly instead of pretending to collect addresses.
+ */
+import Icon from './Icon.astro';
+import { FEATURES } from '../config/site';
+
+interface Props {
+  variant?: 'band' | 'card';
+}
+const { variant = 'band' } = Astro.props;
+---
+
+<section
+  class:list={['overflow-hidden rounded-[1.5rem] p-6 sm:p-10', variant === 'band' ? 'bg-ink text-white' : 'card']}
+  aria-labelledby="newsletter-title"
+>
+  <div class="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+    <div>
+      <p class:list={['eyebrow mb-2', variant === 'band' && 'text-brand']}>Bülten</p>
+      <h2 id="newsletter-title" class="font-display text-2xl font-bold sm:text-3xl">
+        Haftanın En İyi Fırsatları
+      </h2>
+      <p class:list={['mt-3 leading-relaxed', variant === 'band' ? 'text-white/75' : 'text-muted']}>
+        Haftada en fazla bir e-posta: öne çıkan fırsatlar ve yeni rehberler. İstediğiniz an tek tıkla ayrılabilirsiniz.
+      </p>
+    </div>
+    {FEATURES.newsletter ? (
+      <form class="grid gap-3" data-newsletter-form novalidate>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <label for="newsletter-email" class="sr-only">
+            E-posta adresiniz
+          </label>
+          <input
+            id="newsletter-email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="ornek@eposta.com"
+            class="h-12 flex-1 rounded-full border border-transparent bg-white px-5 text-base text-ink placeholder:text-muted focus:outline-none focus:ring-4 focus:ring-brand/40"
+          />
+          <button type="submit" class="btn-cta h-12 px-6">
+            <Icon name="mail" size={18} />
+            Abone ol
+          </button>
+        </div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" class="hidden" aria-hidden="true" />
+        <label class:list={['flex items-start gap-2.5 text-sm leading-snug', variant === 'band' ? 'text-white/80' : 'text-ink-2']}>
+          <input type="checkbox" name="consent" value="yes" required class="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-cta)]" />
+          <span>
+            FırsatBol’un bana fırsat ve kampanya içeren ticari elektronik ileti göndermesine onay veriyorum.
+            <a href="/gizlilik-politikasi/" class="font-semibold underline underline-offset-2">
+              Gizlilik Politikası
+            </a>
+            ’nı okudum.
+          </span>
+        </label>
+        <p class="min-h-[1.25rem] text-sm font-semibold" role="status" aria-live="polite" data-newsletter-status />
+      </form>
+    ) : (
+      <div class:list={['rounded-2xl p-5', variant === 'band' ? 'bg-white/10' : 'bg-canvas']}>
+        <p class="font-semibold">Bülten çok yakında.</p>
+        <p class:list={['mt-1 text-sm leading-relaxed', variant === 'band' ? 'text-white/75' : 'text-muted']}>
+          Abonelik altyapısı henüz etkin olmadığı için şu anda e-posta adresi toplamıyoruz. O zamana kadar yeni fırsatları{' '}
+          <a href="/rss.xml" class="font-semibold underline underline-offset-2">
+            RSS akışımızdan
+          </a>{' '}
+          takip edebilirsiniz.
+        </p>
+      </div>
+    )}
+  </div>
+</section>
+
+{FEATURES.newsletter && <script>
+  import { track } from '../scripts/analytics';
+  document.querySelectorAll<HTMLFormElement>('[data-newsletter-form]').forEach((form) => {
+    const status = form.querySelector<HTMLElement>('[data-newsletter-status]')!;
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const email = String(data.get('email') ?? '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        status.textContent = 'Lütfen geçerli bir e-posta adresi yazın.';
+        return;
+      }
+      if (data.get('consent') !== 'yes') {
+        status.textContent = 'Abone olmak için ticari ileti onayını işaretlemeniz gerekir.';
+        return;
+      }
+      const button = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      button.disabled = true;
+      status.textContent = 'Gönderiliyor…';
+      try {
+        const response = await fetch('/api/newsletter', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, consent: true, website: data.get('website') ?? '' }),
+        });
+        const result = (await response.json().catch(() => ({}))) as { message?: string };
+        status.textContent =
+          result.message ??
+          (response.ok
+            ? 'Onay e-postası gönderildi. Aboneliği tamamlamak için e-postanızdaki bağlantıya tıklayın.'
+            : 'Şu anda abonelik alınamıyor, lütfen daha sonra tekrar deneyin.');
+        if (response.ok) {
+          form.reset();
+          track('newsletter_signup', { placement: location.pathname });
+        }
+      } catch {
+        status.textContent = 'Bağlantı hatası. Lütfen tekrar deneyin.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>}

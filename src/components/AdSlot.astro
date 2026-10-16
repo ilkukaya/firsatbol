@@ -1,0 +1,19 @@
+---
+/**
+ * Reserved advertising position. Renders NOTHING until PUBLIC_ADS_ENABLED=true and an ad
+ * network has approved the site; then add the network's tag here. Ads must be labelled.
+ */
+import { FEATURES } from '../config/site';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+
+{FEATURES.ads && (
+  <aside class="my-8 rounded-2xl border border-dashed border-line p-3 text-center" data-ad-slot={id} aria-label="Reklam">
+    <p class="mb-2 text-[0.7rem] font-semibold uppercase tracking-wider text-muted">Reklam</p>
+    <div class="min-h-[90px]" />
+  </aside>
+)}

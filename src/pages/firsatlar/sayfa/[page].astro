@@ -1,0 +1,20 @@
+---
+import type { GetStaticPaths } from 'astro';
+import ListingPage from '../../../components/ListingPage.astro';
+import { getDeals } from '../../../lib/deals/repository';
+import { PAGE_SIZE, paginate, sortEntries, toIndexEntry } from '../../../lib/deals/query';
+
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  const totalPages = Math.ceil(deals.length / PAGE_SIZE);
+  return Array.from({ length: Math.max(0, totalPages - 1) }, (_, index) => ({ params: { page: String(index + 2) } }));
+}) satisfies GetStaticPaths;
+
+const page = Number(Astro.params.page);
+const { deals } = await getDeals();
+const byId = new Map(deals.map((deal) => [deal.id, deal]));
+const ordered = sortEntries(deals.map(toIndexEntry)).map((entry) => byId.get(entry.id)!);
+const { items, totalPages } = paginate(ordered, page);
+---
+
+<ListingPage deals={deals} pageDeals={items} page={page} totalPages={totalPages} />

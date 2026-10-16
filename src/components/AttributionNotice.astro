@@ -1,0 +1,68 @@
+---
+/**
+ * Required partner attribution. Rendered on every page that shows a provider's data.
+ * If the owner saved the partner's official snippet in src/config/attribution/<id>.html,
+ * that snippet is used verbatim (scripts are refused); otherwise the standard text.
+ */
+import type { Deal } from '../lib/deals/schema';
+import { providersOf } from '../lib/deals/taxonomy';
+
+interface Props {
+  deals: readonly Deal[];
+  class?: string;
+}
+const { deals, class: className } = Astro.props;
+
+const snippets = import.meta.glob<string>('../config/attribution/*.html', { query: '?raw', import: 'default', eager: true });
+const snippetFor = (providerId: string): string | null => {
+  // provider variants (e.g. firsatbufirsat-etkinlik) share the parent snippet
+  const base = providerId.split('-')[0] ?? providerId;
+  const raw = snippets[`../config/attribution/${providerId}.html`] ?? snippets[`../config/attribution/${base}.html`];
+  if (!raw?.trim()) return null;
+  if (/<script|javascript:|on[a-z]+\s*=/i.test(raw)) {
+    console.warn(`[attribution] ${providerId}.html güvenli değil (script/olay işleyici içeriyor); metin sürümü kullanıldı.`);
+    return null;
+  }
+  return raw.trim();
+};
+
+const seen = new Set<string>();
+const notices = providersOf(deals)
+  .filter((provider) => provider.attribution.required)
+  .map((provider) => ({ ...provider, snippet: snippetFor(provider.id) }))
+  .filter((provider) => {
+    // one notice per partner even if it has several feeds
+    const key = provider.snippet ?? provider.attribution.text;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+---
+
+{notices.length > 0 && (
+  <aside
+    class:list={['rounded-2xl border border-line bg-white px-5 py-4 text-sm text-ink-2', className]}
+    aria-label="Veri kaynağı"
+    data-attribution
+  >
+    {notices.map((notice) =>
+      notice.snippet ? (
+        <div class="attribution-snippet" set:html={notice.snippet} />
+      ) : (
+        <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span class="font-semibold text-ink">{notice.attribution.text}</span>
+          {notice.attribution.url && (
+            <a
+              href={notice.attribution.url}
+              target="_blank"
+              rel="noopener"
+              class="font-semibold text-brand-text underline underline-offset-2"
+            >
+              {notice.name}
+            </a>
+          )}
+        </p>
+      ),
+    )}
+  </aside>
+)}

@@ -1,0 +1,179 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import { CATEGORIES } from '../config/categories';
+import { getDeals } from '../lib/deals/repository';
+import { citiesWithDeals } from '../lib/deals/taxonomy';
+
+const { deals } = await getDeals();
+const cities = citiesWithDeals(deals).sort((a, b) => Number(b.featured) - Number(a.featured) || b.count - a.count);
+const path = Astro.url.pathname;
+const query = Astro.url.searchParams.get('q') ?? '';
+const isActive = (href: string) => path.startsWith(href);
+---
+
+<header class="z-40 md:sticky md:top-0 border-b border-line/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+  <div class="container-page">
+    <div class="flex h-16 items-center gap-3 sm:gap-5">
+      <a href="/" class="shrink-0 rounded-lg" aria-label="FırsatBol ana sayfa">
+        <Logo />
+      </a>
+
+      <form action="/arama/" method="get" role="search" class="relative hidden flex-1 md:block" data-search-form>
+        <label for="header-search" class="sr-only">
+          Fırsatlarda ara
+        </label>
+        <Icon name="search" size={18} class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted" />
+        <input
+          id="header-search"
+          name="q"
+          type="search"
+          value={query}
+          placeholder="Kahvaltı, masaj, otel, kulaklık…"
+          autocomplete="off"
+          enterkeyhint="search"
+          class="h-11 w-full rounded-full border border-line bg-canvas pl-11 pr-4 text-[0.95rem] placeholder:text-muted/80 focus:border-ink/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
+        />
+      </form>
+
+      <div class="ml-auto flex items-center gap-2 md:ml-0">
+        <details class="relative hidden sm:block" data-dropdown>
+          <summary class="chip cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+            <Icon name="pin" size={17} class="text-brand-text" />
+            <span>Şehir seç</span>
+            <Icon name="chevron-down" size={16} />
+          </summary>
+          <div class="card absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 p-2">
+            <p class="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wider text-muted">Şehirler</p>
+            <ul class="max-h-80 overflow-y-auto">
+              {cities.map((city) => (
+                <li>
+                  <a
+                    href={`/sehir/${city.slug}/`}
+                    class="flex items-center justify-between rounded-lg px-3 py-2 text-[0.95rem] hover:bg-canvas"
+                  >
+                    <span>{city.name}</span>
+                    {city.count > 0 && <span class="text-xs font-semibold text-muted">{city.count}</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </details>
+        <a href="/firsatlar/" class="btn-cta hidden px-4 py-2 text-sm lg:inline-flex">
+          Tüm Fırsatlar
+        </a>
+        <button
+          type="button"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white md:hidden"
+          aria-controls="mobile-menu"
+          aria-expanded="false"
+          data-menu-toggle
+        >
+          <span class="sr-only">Menüyü aç</span>
+          <Icon name="menu" size={22} />
+        </button>
+      </div>
+    </div>
+
+    <form action="/arama/" method="get" role="search" class="relative pb-3 md:hidden" data-search-form>
+      <label for="header-search-mobile" class="sr-only">
+        Fırsatlarda ara
+      </label>
+      <Icon name="search" size={18} class="pointer-events-none absolute left-4 top-[1.375rem] -translate-y-1/2 text-muted" />
+      <input
+        id="header-search-mobile"
+        name="q"
+        type="search"
+        value={query}
+        placeholder="Fırsat ara…"
+        autocomplete="off"
+        enterkeyhint="search"
+        class="h-11 w-full rounded-full border border-line bg-canvas pl-11 pr-4 text-base focus:border-ink/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-brand/15"
+      />
+    </form>
+
+    <nav aria-label="Kategoriler" class="-mx-4 overflow-x-auto px-4 pb-3 scrollbar-none sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+      <ul class="flex w-max gap-2">
+        <li>
+          <a
+            href="/firsatlar/"
+            class:list={['chip whitespace-nowrap', isActive('/firsatlar/') && 'border-ink bg-ink text-white hover:text-white']}
+            aria-current={isActive('/firsatlar/') ? 'page' : undefined}
+          >
+            Tümü
+          </a>
+        </li>
+        {CATEGORIES.map((category) => {
+          const href = `/kategori/${category.slug}/`;
+          const active = isActive(href);
+          return (
+            <li>
+              <a
+                href={href}
+                class:list={['chip whitespace-nowrap', active && 'border-ink bg-ink text-white hover:text-white']}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon name={category.icon} size={16} class={active ? '' : 'text-brand-text'} />
+                {category.shortName}
+              </a>
+            </li>
+          );
+        })}
+        <li>
+          <a
+            href="/rehber/"
+            class:list={['chip whitespace-nowrap', isActive('/rehber/') && 'border-ink bg-ink text-white hover:text-white']}
+          >
+            <Icon name="book" size={16} class={isActive('/rehber/') ? '' : 'text-brand-text'} />
+            Rehberler
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+
+  <div id="mobile-menu" class="hidden border-t border-line bg-white md:hidden" data-menu-panel>
+    <div class="container-page grid gap-6 py-5">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Şehirler</p>
+        <ul class="flex flex-wrap gap-2">
+          {cities.map((city) => (
+            <li>
+              <a href={`/sehir/${city.slug}/`} class="chip">
+                {city.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <ul class="grid gap-1 text-[1.05rem] font-semibold">
+        <li>
+          <a class="block rounded-lg py-2" href="/firsatlar/">
+            Tüm fırsatlar
+          </a>
+        </li>
+        <li>
+          <a class="block rounded-lg py-2" href="/rehber/">
+            Alışveriş rehberleri
+          </a>
+        </li>
+        <li>
+          <a class="block rounded-lg py-2" href="/firsatlarin-kaynagi/">
+            Fırsatların kaynağı
+          </a>
+        </li>
+        <li>
+          <a class="block rounded-lg py-2" href="/hakkimizda/">
+            Hakkımızda
+          </a>
+        </li>
+        <li>
+          <a class="block rounded-lg py-2" href="/iletisim/">
+            İletişim
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>

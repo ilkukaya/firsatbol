@@ -1,0 +1,28 @@
+---
+import Icon from './Icon.astro';
+
+const items = [
+  { icon: 'shield', title: 'Yetkili kaynaklar', text: 'Fırsatlar yalnızca izinli iş ortaklarından ve doğrulanmış kampanyalardan gelir.' },
+  {
+    icon: 'percent',
+    title: 'Uydurma indirim yok',
+    text: 'İndirim oranı yalnızca kaynak belirttiğinde ya da iki fiyat da bilindiğinde gösterilir.',
+  },
+  { icon: 'clock', title: 'Düzenli güncelleme', text: 'Fırsat akışı periyodik olarak yenilenir, süresi dolanlar listeden kalkar.' },
+  { icon: 'info', title: 'Şeffaf iş ortaklığı', text: 'Komisyon kazanabileceğimiz bağlantıları açıkça belirtiriz; fiyatınız değişmez.' },
+] as const;
+---
+
+<ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  {items.map((item) => (
+    <li class="flex gap-3 rounded-2xl bg-white/70 p-4 ring-1 ring-line">
+      <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-save-bg text-save">
+        <Icon name={item.icon} size={19} />
+      </span>
+      <div>
+        <p class="font-bold text-ink">{item.title}</p>
+        <p class="mt-1 text-sm leading-relaxed text-muted">{item.text}</p>
+      </div>
+    </li>
+  ))}
+</ul>

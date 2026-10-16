@@ -1,0 +1,40 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection, render } from 'astro:content';
+import ProseLayout from '../layouts/ProseLayout.astro';
+import AttributionNotice from '../components/AttributionNotice.astro';
+import { getDeals } from '../lib/deals/repository';
+
+/** Information & legal pages from src/content/pages/*.md (hakkimizda, gizlilik-politikasi, …). */
+export const getStaticPaths = (async () => {
+  const pages = await getCollection('pages');
+  return pages.map((entry) => ({ params: { page: entry.id }, props: { entry } }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { deals } = await getDeals();
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: entry.data.title, path: `/${entry.id}/` },
+];
+---
+
+<ProseLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  updatedAt={entry.data.updatedAt}
+  crumbs={crumbs}
+  showControllerBox={entry.data.showControllerBox}
+  legalReview={entry.data.legalReview}
+>
+  <Content />
+  <Fragment slot="after">
+    {entry.id === 'firsatlarin-kaynagi' && <AttributionNotice deals={deals} class="mt-10" />}
+    {entry.id === 'firsatlarin-kaynagi' && (
+      <p class="mt-4 text-sm text-muted">
+        Şu anda yayında olan fırsat sayısı: <strong class="text-ink">{deals.length.toLocaleString('tr-TR')}</strong>
+      </p>
+    )}
+  </Fragment>
+</ProseLayout>

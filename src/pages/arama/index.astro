@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AttributionNotice from '../../components/AttributionNotice.astro';
+import DealListing from '../../components/DealListing.astro';
+import { getDeals } from '../../lib/deals/repository';
+import { paginate, sortEntries, toIndexEntry } from '../../lib/deals/query';
+
+const { deals } = await getDeals();
+const byId = new Map(deals.map((deal) => [deal.id, deal]));
+const { items, totalPages } = paginate(
+  sortEntries(deals.map(toIndexEntry)).map((entry) => byId.get(entry.id)!),
+  1,
+);
+---
+
+<BaseLayout
+  title="Fırsatlarda Ara"
+  description="FırsatBol’daki güncel fırsatlar arasında arama yapın: mekân, ürün, ilçe ya da satıcı adına göre arayın ve sonuçları filtreleyin."
+  noindex
+>
+  <div class="container-page py-8 sm:py-10">
+    <h1 class="mb-6 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Fırsatlarda ara</h1>
+    <noscript>
+      <p class="mb-4 rounded-xl bg-sun/40 p-3 text-sm">
+        Arama için JavaScript gerekir. Kategori sayfalarından da fırsatlara göz atabilirsiniz.
+      </p>
+    </noscript>
+    <DealListing deals={deals} pageDeals={items} page={1} totalPages={totalPages} base="/firsatlar/" placement="search" alwaysRender />
+    <AttributionNotice deals={deals} class="mt-10" />
+  </div>
+</BaseLayout>

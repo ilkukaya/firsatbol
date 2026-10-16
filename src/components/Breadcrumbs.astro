@@ -1,0 +1,31 @@
+---
+import type { Crumb } from '../lib/seo';
+
+interface Props {
+  crumbs: readonly Crumb[];
+}
+const { crumbs } = Astro.props;
+---
+
+<nav aria-label="Sayfa konumu" class="text-sm text-muted">
+  <ol class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+    {crumbs.map((crumb, index) => (
+      <li class="flex items-center gap-1.5">
+        {index > 0 && (
+          <span aria-hidden="true" class="text-line">
+            /
+          </span>
+        )}
+        {index === crumbs.length - 1 ? (
+          <span aria-current="page" class="line-clamp-1 font-medium text-ink-2">
+            {crumb.name}
+          </span>
+        ) : (
+          <a href={crumb.path} class="hover:text-ink hover:underline underline-offset-2">
+            {crumb.name}
+          </a>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>

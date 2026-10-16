@@ -1,0 +1,41 @@
+---
+/** Data-controller details (KVKK). Values come from env; missing ones are flagged honestly. */
+import { OWNER } from '../config/site';
+
+const rows = [
+  { label: 'Veri sorumlusu', value: OWNER.controllerName },
+  { label: 'Adres', value: OWNER.controllerAddress },
+  { label: 'E-posta', value: OWNER.contactEmail },
+  { label: 'KEP adresi', value: OWNER.kepAddress },
+  { label: 'MERSİS no', value: OWNER.mersisNo },
+].filter((row) => row.value || ['Veri sorumlusu', 'Adres'].includes(row.label));
+const incomplete = !OWNER.controllerName || !OWNER.controllerAddress;
+---
+
+<section class="not-prose my-8 rounded-2xl border border-line bg-white p-5" aria-labelledby="veri-sorumlusu" id="veri-sorumlusu-bilgileri">
+  <h2 id="veri-sorumlusu" class="text-base font-bold text-ink">
+    Veri Sorumlusu
+  </h2>
+  <dl class="mt-3 grid gap-2 text-sm">
+    {rows.map((row) => (
+      <div class="grid gap-0.5 sm:grid-cols-[9rem_1fr]">
+        <dt class="font-semibold text-muted">{row.label}</dt>
+        <dd class="text-ink-2">{row.value ?? 'Güncelleniyor'}</dd>
+      </div>
+    ))}
+    <div class="grid gap-0.5 sm:grid-cols-[9rem_1fr]">
+      <dt class="font-semibold text-muted">Başvuru</dt>
+      <dd class="text-ink-2">
+        <a href="/iletisim/" class="font-semibold text-brand-text underline">
+          İletişim formu
+        </a>
+      </dd>
+    </div>
+  </dl>
+  {incomplete && (
+    <p class="mt-3 rounded-lg bg-sun/30 px-3 py-2 text-xs text-ink-2">
+      Veri sorumlusunun kimlik ve adres bilgileri güncellenmektedir. Bu süre içinde KVKK kapsamındaki tüm talepleriniz için iletişim formunu
+      kullanabilirsiniz.
+    </p>
+  )}
+</section>
