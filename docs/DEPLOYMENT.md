@@ -4,14 +4,12 @@
 
 | Item | State |
 | --- | --- |
-| Netlify project | `firsatbol` created on team `ilkukaya` — https://app.netlify.com/projects/firsatbol |
-| Default URL | https://firsatbol.netlify.app — **no deploy yet** (returns Netlify's "not found" until the first deploy) |
+| Netlify project | `firsatbol` on team `ilkukaya` — https://app.netlify.com/projects/firsatbol |
+| Live URL | https://firsatbol.netlify.app (production deploys from branch `claude/sweet-mendel-8uunqt`) |
+| Continuous deployment | linked — every push deploys automatically |
+| Env vars | `FIRSATBUFIRSAT_API_KEY`, `FIRSATBUFIRSAT_PUBLISHER_ID` set (mark the key as **secret** in the UI and rotate it — it was shared in chat) |
 | Forms detection | enabled |
-| Git link | **not linked yet** — do step 1 below (one-time, in the Netlify UI) |
-| Custom domain | not configured (domain/DNS not confirmed) |
-
-The deploy could not be started from the build agent's sandbox because its network policy blocks
-`api.netlify.com` / `netlify-mcp.netlify.app`. Linking the repository (step 1) triggers the first deploy.
+| Still to configure | `NETLIFY_BUILD_HOOK_URL` + `ADMIN_TOKEN` (scheduled/manual refresh), analytics, custom domain |
 
 ## 1. Connect the repository (continuous deployment)
 
