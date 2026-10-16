@@ -2,7 +2,7 @@ import { readBool, readEnv, readInt } from '../../env';
 import { normalizeDeal, type NormalizeContext } from '../../deals/normalize';
 import type { Deal } from '../../deals/schema';
 import { mapRecord, parseFieldMap, type FieldMap } from '../fields';
-import { DEFAULT_POLICY, fetchText, redactUrl, type FetchPolicy } from '../http';
+import { DEFAULT_POLICY, ProviderHttpError, fetchText, redactUrl, type FetchPolicy } from '../http';
 import { detectFormat, extractRecords, parseBody } from '../parse';
 import { emptyDiagnostics, type ProviderAdapter, type ProviderDiagnostics, type ProviderFetchOptions, type ProviderResult } from '../types';
 
@@ -212,6 +212,7 @@ export function createFirsatBuFirsatAdapter(config: FbfConfig = readFbfConfig())
         diagnostics.ok = true;
         if (diagnostics.received === 0) diagnostics.warnings.push('Sağlayıcı yanıtında fırsat kaydı bulunamadı.');
       } catch (error) {
+        if (error instanceof ProviderHttpError) diagnostics.requests += error.attempts;
         diagnostics.ok = false;
         const message = error instanceof Error ? error.message : String(error);
         diagnostics.error = secrets.reduce((text, secret) => text.split(secret).join('***'), message);

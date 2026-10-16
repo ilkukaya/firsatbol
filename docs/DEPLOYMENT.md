@@ -1,10 +1,22 @@
 # Deployment (Netlify)
 
+## Current status (2026-10-16)
+
+| Item | State |
+| --- | --- |
+| Netlify project | `firsatbol` created on team `ilkukaya` — https://app.netlify.com/projects/firsatbol |
+| Default URL | https://firsatbol.netlify.app — **no deploy yet** (returns Netlify's "not found" until the first deploy) |
+| Forms detection | enabled |
+| Git link | **not linked yet** — do step 1 below (one-time, in the Netlify UI) |
+| Custom domain | not configured (domain/DNS not confirmed) |
+
+The deploy could not be started from the build agent's sandbox because its network policy blocks
+`api.netlify.com` / `netlify-mcp.netlify.app`. Linking the repository (step 1) triggers the first deploy.
+
 ## 1. Connect the repository (continuous deployment)
 
-1. Netlify → **Add new project → Import an existing project → GitHub** → `ilkukaya/firsatbol`
-   (or, if the project `firsatbol` already exists: **Project configuration → Build & deploy → Continuous deployment
-   → Link repository**).
+1. Open https://app.netlify.com/projects/firsatbol → **Project configuration → Build & deploy → Continuous
+   deployment → Link repository → GitHub** → `ilkukaya/firsatbol` (authorise the Netlify GitHub app if asked).
 2. Build settings are read from `netlify.toml`: command `npm run build`, publish `dist`, Node 22.
 3. **Production branch**: `main` is recommended. Until `main` exists, the first pushed branch is the repository's
    only branch — merge the work into `main` (pull request) and select `main` as the production branch.

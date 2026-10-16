@@ -135,6 +135,7 @@ describe('request building & secrets', () => {
     const result = await createFirsatBuFirsatAdapter(readFbfConfig()).fetchDeals({ now });
     expect(result.diagnostics.ok).toBe(false);
     expect(result.diagnostics.error).toContain('401');
+    expect(result.diagnostics.requests).toBe(1);
     expect(JSON.stringify(result.diagnostics)).not.toContain('K3Y-SECRET');
   });
   it('paginates until an empty page', async () => {
@@ -184,7 +185,7 @@ describe('fetchText retry', () => {
         {},
         fetchImpl,
       ),
-    ).rejects.toThrow('403');
+    ).rejects.toMatchObject({ status: 403, attempts: 1 });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });

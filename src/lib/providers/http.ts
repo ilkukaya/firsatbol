@@ -20,6 +20,8 @@ export const DEFAULT_POLICY: FetchPolicy = {
 };
 
 export class ProviderHttpError extends Error {
+  /** Number of HTTP attempts made before giving up (for diagnostics). */
+  attempts = 0;
   constructor(
     message: string,
     readonly status: number | null,
@@ -103,7 +105,10 @@ export async function fetchText(
       const wait = retryAfterMs(response) ?? backoff(policy.baseDelayMs, attempt);
       if (attempt <= policy.retries) await sleep(wait);
     } catch (error) {
-      if (error instanceof ProviderHttpError && !error.retryable) throw error;
+      if (error instanceof ProviderHttpError && !error.retryable) {
+        error.attempts = attempt;
+        throw error;
+      }
       if (!(error instanceof ProviderHttpError)) {
         const aborted = error instanceof Error && error.name === 'AbortError';
         lastError = new ProviderHttpError(
@@ -117,7 +122,9 @@ export async function fetchText(
       clearTimeout(timer);
     }
   }
-  throw lastError ?? new ProviderHttpError(`İstek başarısız (${redactedUrl})`, null, false);
+  const failure = lastError ?? new ProviderHttpError(`İstek başarısız (${redactedUrl})`, null, false);
+  failure.attempts = attempt;
+  throw failure;
 }
 
 export function backoff(baseDelayMs: number, attempt: number): number {
