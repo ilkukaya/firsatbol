@@ -97,3 +97,12 @@ export function providersOf(deals: readonly Deal[]): { id: string; name: string;
   }
   return [...map.values()];
 }
+
+/** Events with a session in the next `days` days, soonest first (real Etkinlik API dates). */
+export function upcomingEvents(deals: readonly Deal[], now: Date, days = 7, limit = 8): Deal[] {
+  const end = now.getTime() + days * 24 * 60 * 60 * 1000;
+  return deals
+    .filter((deal) => deal.sessions.some((session) => Date.parse(session.date) >= now.getTime() && Date.parse(session.date) <= end))
+    .sort((a, b) => Date.parse(a.sessions[0]!.date) - Date.parse(b.sessions[0]!.date))
+    .slice(0, limit);
+}

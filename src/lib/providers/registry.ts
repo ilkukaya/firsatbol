@@ -11,9 +11,8 @@ import type { ProviderAdapter } from './types';
  * append it here. Feeds that only need a URL + field map go into `DEAL_FEEDS` instead.
  */
 export function getNetworkProviders(): { providers: ProviderAdapter[]; configErrors: string[] } {
-  const providers: ProviderAdapter[] = [createFirsatBuFirsatAdapter(readFbfConfig('deals'))];
-  const events = readFbfConfig('events');
-  if (events.endpoint) providers.push(createFirsatBuFirsatAdapter(events));
+  // Fırsat Bu Fırsat: deals API + Etkinlik API (sessions merged into the deals) in one adapter.
+  const providers: ProviderAdapter[] = [createFirsatBuFirsatAdapter(readFbfConfig())];
   const { feeds, errors } = readFeedConfigs();
   providers.push(...feeds.map(createFeedAdapter));
   return { providers, configErrors: errors };

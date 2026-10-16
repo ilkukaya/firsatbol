@@ -22,14 +22,16 @@ const entry = (over: Partial<DealIndexEntry>): DealIndexEntry => ({
   vu: null,
   vf: null,
   f: 0,
+  ns: null,
+  pf: 0,
   q: '',
   ...over,
 });
 
 const list = [
-  entry({ id: 'a', p: 300, dp: 10, ct: 'istanbul', q: 'kahvalti besiktas', m: 'Örnek Kafe', vf: '2026-10-01T00:00:00Z' }),
-  entry({ id: 'b', p: 100, c: 'tatil', q: 'otel bursa', vf: '2026-10-10T00:00:00Z', vu: '2026-10-20T00:00:00Z' }),
-  entry({ id: 'c', p: null, dp: 50, ct: 'istanbul', q: 'masaj', f: 1 }),
+  entry({ id: 'a', p: 300, dp: 10, ct: 'istanbul', t: 'Kahvaltı', d: 'Beşiktaş', q: '', m: 'Örnek Kafe', vf: '2026-10-01T00:00:00Z' }),
+  entry({ id: 'b', p: 100, c: 'tatil', t: 'Otel', cn: 'Bursa', q: '', vf: '2026-10-10T00:00:00Z', vu: '2026-10-20T00:00:00Z' }),
+  entry({ id: 'c', p: null, dp: 50, ct: 'istanbul', t: 'Spa', q: 'masaj', f: 1 }),
 ];
 
 describe('filters', () => {

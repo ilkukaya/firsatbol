@@ -103,6 +103,15 @@ test('expired deals are flagged client-side between refreshes', async ({ page })
   await expect(page.getByText('geçerlilik süresi dolmuş görünüyor')).toBeVisible();
 });
 
+test('event calendar: this-week section and session table', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Bu Hafta Etkinlikler' })).toBeVisible();
+  await page.goto('/firsat/ornek-veri-stand-up-gosterisi-bileti-1004/');
+  await expect(page.getByRole('heading', { name: 'Etkinlik takvimi' })).toBeVisible();
+  await expect(page.locator('section[aria-labelledby="takvim"] li')).toHaveCount(3);
+  await expect(page.getByText('Sonraki seans')).toBeVisible();
+});
+
 test('category, city and guide pages render', async ({ page }) => {
   await page.goto('/kategori/yeme-icme/');
   await expect(page.locator('h1')).toHaveText('Yeme İçme Fırsatları');

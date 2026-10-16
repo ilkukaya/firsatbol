@@ -1,6 +1,7 @@
 import { readBool, readEnv, readInt } from '../../env';
 import { normalizeDeal, type NormalizeContext } from '../../deals/normalize';
 import type { Deal } from '../../deals/schema';
+import { mergeEventSessions, parseEventsResponse, type EventSessionRecord } from './events';
 import { mapRecord, parseFieldMap, readPath, type FieldMap } from '../fields';
 import { DEFAULT_POLICY, ProviderHttpError, fetchText, mapWithConcurrency, redactUrl, type FetchPolicy } from '../http';
 import { detectFormat, extractRecords, parseBody } from '../parse';
@@ -10,20 +11,22 @@ import { emptyDiagnostics, type ProviderAdapter, type ProviderDiagnostics, type 
  * Fırsat Bu Fırsat publisher API adapter.
  *
  * VERIFIED against real responses (2026-10-16):
- *  - Endpoint `https://api.firsatbufirsat.com/deal/browse.html` with `apiKey` + `publisherId`.
- *  - JSON: `{ result: "SUCCESS", resultMessage, total, deals: [...] }`, 10 deals per page.
- *  - `p` = page number. The API serves at most 20 distinct pages (200 deals) per query; later
- *    pages repeat the last one.
- *  - `cityId` = the partner's own province id (1–81, roughly Turkish alphabetical order;
- *    e.g. 7 Ankara, 41 İstanbul, 42 İzmir). Each city query lists that city's local deals
- *    first, followed by the nationwide deals (empty `city`, shipped/online offers).
- *  - `townId` filters by district (ids not enumerated yet; add via FIRSATBUFIRSAT_QUERIES).
- *  - `showDealUrl` / `buyDealUrl` carry our publisher id as `pid` (publisher tracking).
- * To get more than 200 deals we therefore sweep the provinces (see `sweepPlan`).
+ *  - Deals: `https://api.firsatbufirsat.com/deal/browse.html?apiKey&publisherId`
+ *    → `{ result: "SUCCESS", resultMessage, total, deals: [...] }`.
+ *  - `itemInPage` = page size (max 100), `p` = page number, at most 20 distinct pages per
+ *    query (later pages repeat the last one). With 100 per page the whole catalog (≈2 000)
+ *    fits in one unfiltered query; above that we fall back to a province sweep.
+ *  - `cityId` = partner province id (1–81, see the owner's list; 41 İstanbul, 7 Ankara, …).
+ *    City queries list local deals first, then nationwide deals (empty `city`).
+ *  - `showDealUrl` carries our publisher id as `pid` (publisher tracking).
+ *  - Events: `/deal/event-deals.html` → `{ events: [...] }`, one record per session
+ *    (see ./events.ts); sessions are merged into the matching deal.
  */
 export const FBF_ATTRIBUTION_TEXT = 'Fırsat bilgileri Fırsat Bu Fırsat tarafından sağlanmaktadır.';
 export const FBF_HOME_URL = 'https://www.firsatbufirsat.com/';
 export const FBF_DEFAULT_ENDPOINT = 'https://api.firsatbufirsat.com/deal/browse.html';
+export const FBF_EVENTS_ENDPOINT = 'https://api.firsatbufirsat.com/deal/event-deals.html';
+export const FBF_PAGE_SIZE_QUERY = 'itemInPage=100';
 
 /** Field paths verified in the real response. Env FIRSATBUFIRSAT_FIELD_MAP overrides single fields. */
 export const FBF_FIELD_MAP: FieldMap = {
@@ -64,8 +67,12 @@ export interface FbfConfig {
   pageParam: string | undefined;
   pageStart: number;
   maxPages: number;
-  /** Province ids to sweep (null = one unfiltered query). */
+  /** Province ids to sweep; null = unfiltered only. */
   cityIds: number[] | null;
+  /** "auto": sweep provinces only when the unfiltered query cannot return the whole catalog. */
+  cityMode: 'auto' | 'always' | 'off';
+  /** Etkinlik API endpoint ('' disables session merging). */
+  eventsEndpoint: string;
   /** Additional queries swept like cities, e.g. "cityId=41&townId=123" for big districts. */
   extraQueries: string[];
   concurrency: number;
@@ -74,55 +81,56 @@ export interface FbfConfig {
   trackingVerified: boolean;
   /** Optional link template from "Link Oluşturma": {url} {urlEncoded} {publisherId} {id}. */
   linkTemplate: string | undefined;
-  /** Category hint for records without a category (e.g. the events API → "etkinlik"). */
+  /** Category hint for records without a category. */
   categoryHint: string | undefined;
   indexProviderPages: boolean;
   policy: FetchPolicy;
 }
 
-function parseCityIds(raw: string | undefined): number[] | null {
-  const value = (raw ?? 'all').trim().toLowerCase();
-  if (value === 'none' || value === 'off' || value === '0') return null;
-  if (value === 'all') return Array.from({ length: 81 }, (_, index) => index + 1);
+function parseCityIds(raw: string | undefined): { mode: FbfConfig['cityMode']; ids: number[] | null } {
+  const value = (raw ?? 'auto').trim().toLowerCase();
+  const all = Array.from({ length: 81 }, (_, index) => index + 1);
+  if (value === 'none' || value === 'off' || value === '0') return { mode: 'off', ids: null };
+  if (value === 'auto') return { mode: 'auto', ids: all };
+  if (value === 'all') return { mode: 'always', ids: all };
   const ids = value
     .split(/[\s,;]+/)
     .map((part) => Number.parseInt(part, 10))
     .filter((id) => Number.isInteger(id) && id > 0 && id < 1000);
-  return ids.length ? [...new Set(ids)] : null;
+  return ids.length ? { mode: 'always', ids: [...new Set(ids)] } : { mode: 'auto', ids: all };
 }
 
-export function readFbfConfig(variant: 'deals' | 'events' = 'deals'): FbfConfig {
-  const isEvents = variant === 'events';
+export function readFbfConfig(): FbfConfig {
+  const cities = parseCityIds(readEnv('FIRSATBUFIRSAT_CITY_IDS'));
+  const eventsSetting = readEnv('FIRSATBUFIRSAT_EVENTS_API_URL');
   return {
-    id: isEvents ? 'firsatbufirsat-etkinlik' : 'firsatbufirsat',
+    id: 'firsatbufirsat',
     name: 'Fırsat Bu Fırsat',
-    endpoint: isEvents
-      ? (readEnv('FIRSATBUFIRSAT_EVENTS_API_URL') ?? '')
-      : (readEnv('FIRSATBUFIRSAT_API_BASE_URL') ?? FBF_DEFAULT_ENDPOINT),
+    endpoint: readEnv('FIRSATBUFIRSAT_API_BASE_URL') ?? FBF_DEFAULT_ENDPOINT,
     apiKey: readEnv('FIRSATBUFIRSAT_API_KEY'),
     publisherId: readEnv('FIRSATBUFIRSAT_PUBLISHER_ID'),
-    extraQuery: readEnv(isEvents ? 'FIRSATBUFIRSAT_EVENTS_EXTRA_QUERY' : 'FIRSATBUFIRSAT_EXTRA_QUERY'),
-    popularQuery: isEvents ? undefined : readEnv('FIRSATBUFIRSAT_POPULAR_QUERY'),
-    newQuery: isEvents ? undefined : readEnv('FIRSATBUFIRSAT_NEW_QUERY'),
+    extraQuery: readEnv('FIRSATBUFIRSAT_EXTRA_QUERY') ?? FBF_PAGE_SIZE_QUERY,
+    popularQuery: readEnv('FIRSATBUFIRSAT_POPULAR_QUERY'),
+    newQuery: readEnv('FIRSATBUFIRSAT_NEW_QUERY'),
     pageParam: readEnv('FIRSATBUFIRSAT_PAGE_PARAM') ?? 'p',
     pageStart: readInt('FIRSATBUFIRSAT_PAGE_START', 1, { min: 0, max: 1 }),
     maxPages: readInt('FIRSATBUFIRSAT_MAX_PAGES', FBF_PAGE_LIMIT, { min: 1, max: 50 }),
-    cityIds: isEvents ? null : parseCityIds(readEnv('FIRSATBUFIRSAT_CITY_IDS')),
-    extraQueries: isEvents
-      ? []
-      : (readEnv('FIRSATBUFIRSAT_QUERIES') ?? '')
-          .split(/[\n|]+/)
-          .map((query) => query.trim().replace(/^\?/, ''))
-          .filter(Boolean),
+    cityIds: cities.ids,
+    cityMode: cities.mode,
+    eventsEndpoint: eventsSetting === 'off' ? '' : (eventsSetting ?? FBF_EVENTS_ENDPOINT),
+    extraQueries: (readEnv('FIRSATBUFIRSAT_QUERIES') ?? '')
+      .split(/[\n|]+/)
+      .map((query) => query.trim().replace(/^\?/, ''))
+      .filter(Boolean),
     concurrency: readInt('FIRSATBUFIRSAT_CONCURRENCY', 3, { min: 1, max: 6 }),
     fieldMap: { ...FBF_FIELD_MAP, ...parseFieldMap(readEnv('FIRSATBUFIRSAT_FIELD_MAP')) },
     trackingVerified: readBool('FIRSATBUFIRSAT_TRACKING_VERIFIED', false),
     linkTemplate: readEnv('FIRSATBUFIRSAT_LINK_TEMPLATE'),
-    categoryHint: isEvents ? 'etkinlik' : undefined,
+    categoryHint: undefined,
     indexProviderPages: readBool('DEALS_INDEX_PROVIDER_PAGES', false),
     policy: {
       ...DEFAULT_POLICY,
-      timeoutMs: readInt('FIRSATBUFIRSAT_TIMEOUT_MS', 20_000, { min: 2_000, max: 30_000 }),
+      timeoutMs: readInt('FIRSATBUFIRSAT_TIMEOUT_MS', 30_000, { min: 2_000, max: 60_000 }),
       retries: readInt('FIRSATBUFIRSAT_RETRIES', 3, { min: 0, max: 5 }),
       minIntervalMs: readInt('FIRSATBUFIRSAT_MIN_INTERVAL_MS', 350, { min: 0, max: 10_000 }),
     },
@@ -133,8 +141,9 @@ export function buildRequestUrl(
   config: Pick<FbfConfig, 'endpoint' | 'extraQuery' | 'pageParam' | 'apiKey' | 'publisherId'>,
   extra: string | undefined,
   page: number | null,
+  endpoint: string = config.endpoint,
 ): string {
-  const url = new URL(config.endpoint);
+  const url = new URL(endpoint);
   for (const query of [config.extraQuery, extra]) {
     if (!query) continue;
     for (const [key, value] of new URLSearchParams(query.replace(/^\?/, ''))) url.searchParams.set(key, value);
@@ -276,11 +285,12 @@ export interface SweepQuery {
   signals?: { popular?: boolean; isNew?: boolean };
 }
 
-/** Which queries to run: one unfiltered query, or a sweep over provinces (+ owner queries). */
-export function sweepPlan(config: Pick<FbfConfig, 'cityIds' | 'extraQueries' | 'popularQuery' | 'newQuery'>): SweepQuery[] {
-  const plan: SweepQuery[] = config.cityIds
-    ? config.cityIds.map((id) => ({ query: `cityId=${id}`, scoped: true }))
-    : [{ query: undefined, scoped: false }];
+/** Province sweep queries (+ owner queries and optional popular/new signal queries). */
+export function sweepPlan(
+  config: Pick<FbfConfig, 'cityIds' | 'extraQueries' | 'popularQuery' | 'newQuery'>,
+  includeCities = true,
+): SweepQuery[] {
+  const plan: SweepQuery[] = includeCities && config.cityIds ? config.cityIds.map((id) => ({ query: `cityId=${id}`, scoped: true })) : [];
   for (const query of config.extraQueries) plan.push({ query, scoped: true });
   if (config.popularQuery) plan.push({ query: config.popularQuery, scoped: false, signals: { popular: true } });
   if (config.newQuery) plan.push({ query: config.newQuery, scoped: false, signals: { isNew: true } });
@@ -319,7 +329,14 @@ export function createFirsatBuFirsatAdapter(config: FbfConfig = readFbfConfig())
     async probe({ now }: ProviderFetchOptions): Promise<string> {
       const diagnostics = emptyDiagnostics(config.id, config.name, configured);
       const result = await request(undefined, config.pageParam ? config.pageStart : null, diagnostics, now, {});
-      return `${result.total ?? result.received}:${result.recordIds.join(',')}`;
+      let events = '';
+      if (config.eventsEndpoint) {
+        const url = buildRequestUrl(config, undefined, config.pageStart, config.eventsEndpoint);
+        const response = await fetchText(url, redactUrl(url, secrets), config.policy);
+        const page = parseEventsResponse(response.body, response.contentType, secrets, now);
+        events = `|e${page.total ?? page.received}:${page.keys.slice(0, 20).join(',')}`;
+      }
+      return `${result.total ?? result.received}:${result.recordIds.join(',')}${events}`;
     },
 
     async fetchDeals({ now }: ProviderFetchOptions): Promise<ProviderResult> {
@@ -367,20 +384,67 @@ export function createFirsatBuFirsatAdapter(config: FbfConfig = readFbfConfig())
         }
       };
 
-      try {
-        const plan = sweepPlan(config);
-        // The first scoped query is paged to the end once so the nationwide tail is collected exactly once.
-        const [first, ...rest] = plan;
-        if (first) {
-          await sweep(first, first.scoped);
-          nationwideCollected = first.scoped;
+      const fetchEvents = async () => {
+        const records: EventSessionRecord[] = [];
+        const seen = new Set<string>();
+        let pageSize = 0;
+        for (let index = 0; index < config.maxPages; index += 1) {
+          const url = buildRequestUrl(config, undefined, config.pageStart + index, config.eventsEndpoint);
+          let page;
+          try {
+            const response = await fetchText(url, redactUrl(url, secrets), config.policy);
+            diagnostics.requests += response.attempts;
+            page = parseEventsResponse(response.body, response.contentType, secrets, now);
+          } catch (error) {
+            if (error instanceof ProviderHttpError) diagnostics.requests += error.attempts;
+            throw error;
+          }
+          const fresh = page.keys.filter((key) => !seen.has(key));
+          if (fresh.length === 0) break;
+          fresh.forEach((key) => seen.add(key));
+          records.push(...page.records);
+          pageSize = Math.max(pageSize, page.received);
+          if (page.received < pageSize) break;
         }
-        await mapWithConcurrency(rest, config.concurrency, (item) => sweep(item, !nationwideCollected && !item.scoped));
+        return { records, sessions: seen.size };
+      };
+
+      try {
+        // 1) whole catalog in one unfiltered, paginated query (100 per page)
+        const catalog = { query: undefined, scoped: false } satisfies SweepQuery;
+        const before = truncated;
+        await sweep(catalog, true);
+        const catalogIncomplete = truncated > before;
+        // 2) province sweep: always if requested, or automatically when the catalog was cut off
+        const plan = sweepPlan(config, config.cityMode === 'always' || (config.cityMode === 'auto' && catalogIncomplete));
+        if (catalogIncomplete && config.cityMode === 'auto') truncated = before; // the sweep covers the gap
+        nationwideCollected = true; // the unfiltered query already contains the nationwide deals
+        await mapWithConcurrency(plan, config.concurrency, (item) => sweep(item, !nationwideCollected && !item.scoped));
+        // 3) event sessions
+        if (config.eventsEndpoint) {
+          const events = await fetchEvents();
+          const ctx = {
+            providerId: config.id,
+            providerName: config.name,
+            attribution: { required: true, providerId: config.id, text: FBF_ATTRIBUTION_TEXT, url: FBF_HOME_URL },
+            trackingStatus: config.trackingVerified ? ('provider-tracked' as const) : ('unverified' as const),
+            now,
+            redact: secrets,
+            indexProviderPages: config.indexProviderPages,
+            publisherId: config.publisherId,
+          };
+          const merged = mergeEventSessions([...byId.values()], events.records, ctx);
+          byId.clear();
+          for (const deal of merged.deals) byId.set(deal.id, deal);
+          diagnostics.warnings.push(
+            `Etkinlik API: ${events.sessions} seans; ${merged.attached} fırsata takvim eklendi, ${merged.created} yalnızca etkinlik olan fırsat oluşturuldu.`,
+          );
+        }
         diagnostics.ok = true;
         if (diagnostics.received === 0) diagnostics.warnings.push('Sağlayıcı yanıtında fırsat kaydı bulunamadı.');
         if (truncated > 0) {
           diagnostics.warnings.push(
-            `API sorgu başına ${FBF_PAGE_LIMIT} sayfa sınırı nedeniyle yaklaşık ${truncated} kayıt alınamadı (büyük iller için ilçe sorguları ekleyin: FIRSATBUFIRSAT_QUERIES).`,
+            `API sorgu başına ${FBF_PAGE_LIMIT} sayfa sınırı nedeniyle yaklaşık ${truncated} kayıt alınamadı (FIRSATBUFIRSAT_CITY_IDS=all ya da ilçe sorguları ekleyin).`,
           );
         }
       } catch (error) {

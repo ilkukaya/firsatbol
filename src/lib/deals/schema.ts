@@ -35,6 +35,18 @@ export const dealOptionSchema = z.object({
   originalPrice: z.number().positive().nullable(),
 });
 
+/** One scheduled session of an event (Etkinlik API), exactly as supplied. */
+export const dealSessionSchema = z.object({
+  date: isoDate,
+  venue: z.string().nullable(),
+  address: z.string().nullable(),
+  city: z.string().nullable(),
+  citySlug: z.string().nullable(),
+  district: z.string().nullable(),
+  price: z.number().nonnegative().nullable(),
+  originalPrice: z.number().positive().nullable(),
+});
+
 export const dealSchema = z
   .object({
     id: z.string().min(3),
@@ -77,6 +89,10 @@ export const dealSchema = z
     conditions: z.array(z.string()),
     /** Purchasable options/packages with their own prices, exactly as supplied. */
     options: z.array(dealOptionSchema),
+    /** Upcoming event sessions (sorted by date). */
+    sessions: z.array(dealSessionSchema),
+    /** `price` is the lowest of several differing prices ("…'den başlayan"). */
+    priceFrom: z.boolean(),
     tags: z.array(z.string()),
     /** Whether the detail page may be indexed (see `indexability` in normalize.ts). */
     indexable: z.boolean(),
@@ -96,6 +112,7 @@ export const dealSchema = z
 
 export type Deal = z.infer<typeof dealSchema>;
 export type DealOption = z.infer<typeof dealOptionSchema>;
+export type DealSession = z.infer<typeof dealSessionSchema>;
 export type TrackingStatus = z.infer<typeof trackingStatusSchema>;
 export type Attribution = z.infer<typeof attributionSchema>;
 
@@ -120,5 +137,7 @@ export interface DealIndexEntry {
   vu: string | null; // valid until
   vf: string | null; // valid from
   f: 0 | 1; // featured
-  q: string; // folded search text
+  ns: string | null; // next event session
+  pf: 0 | 1; // price is a "from" price
+  q: string; // folded extra search terms (tags, provider category)
 }

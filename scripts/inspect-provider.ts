@@ -12,6 +12,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildRequestUrl, createFirsatBuFirsatAdapter, readFbfConfig, transformResponse } from '../src/lib/providers/firsatbufirsat';
 import { mapRecord } from '../src/lib/providers/fields';
+import { parseEventsResponse } from '../src/lib/providers/firsatbufirsat/events';
 import { fetchText, redactUrl } from '../src/lib/providers/http';
 import { describeShape, detectFormat, extractRecords, parseBody } from '../src/lib/providers/parse';
 
@@ -22,9 +23,9 @@ try {
 }
 
 const variant = process.argv.includes('--events') ? 'events' : 'deals';
-const config = readFbfConfig(variant);
+const config = readFbfConfig();
 if (!config.apiKey || !config.publisherId || !config.endpoint) {
-  console.error('FIRSATBUFIRSAT_API_KEY ve FIRSATBUFIRSAT_PUBLISHER_ID (etkinlik için FIRSATBUFIRSAT_EVENTS_API_URL) gerekli.');
+  console.error('FIRSATBUFIRSAT_API_KEY ve FIRSATBUFIRSAT_PUBLISHER_ID gerekli.');
   process.exit(1);
 }
 const secrets = [config.apiKey, config.publisherId];
@@ -48,7 +49,12 @@ if (process.argv.includes('--sweep')) {
   process.exit(diagnostics.ok ? 0 : 1);
 }
 
-const url = buildRequestUrl(config, undefined, config.pageParam ? config.pageStart : null);
+const url = buildRequestUrl(
+  config,
+  undefined,
+  config.pageParam ? config.pageStart : null,
+  variant === 'events' ? config.eventsEndpoint : config.endpoint,
+);
 console.log(`İstek: ${redactUrl(url, secrets)}`);
 const response = await fetchText(url, redactUrl(url, secrets), { ...config.policy, retries: 0 });
 const format = detectFormat(response.contentType, response.body);
@@ -73,6 +79,12 @@ console.log(`\nKayıt listesi: ${path || '(bulunamadı)'} · ${records.length} k
 for (const record of records.slice(0, 2)) {
   console.log(`\nÖrnek kayıt anahtarları: ${Object.keys(record).join(', ')}`);
   console.log('Eşleşen alanlar:', JSON.stringify(mapRecord(record, config.fieldMap).usedKeys));
+}
+if (variant === 'events') {
+  const page = parseEventsResponse(response.body, response.contentType, secrets, new Date());
+  console.log(`\nEtkinlik seansları: toplam=${page.total} bu sayfada=${page.received} gelecek seans=${page.records.length}`);
+  console.log(redact(JSON.stringify(page.records.slice(0, 2), null, 2)));
+  process.exit(0);
 }
 const result = transformResponse(response.body, response.contentType, config, new Date());
 console.log(`\nNormalize: kabul=${result.deals.length} süresi-dolmuş=${result.expired} red=${JSON.stringify(result.rejectReasons)}`);

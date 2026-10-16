@@ -33,12 +33,13 @@ Verified against real responses with the owner's credentials:
 | --- | --- |
 | Endpoint | `https://api.firsatbufirsat.com/deal/browse.html?apiKey=…&publisherId=…` |
 | Format | JSON `{ result: "SUCCESS", resultMessage, total, deals: [...] }` — non-SUCCESS results fail the build (production) |
-| Page size | 10 deals, not configurable (20+ candidate parameter names tested without effect) |
-| Pagination | `p=<n>`; **max 20 distinct pages (200 deals) per query**, later pages repeat the last one |
+| Page size | `itemInPage=<n>`, max 100 (default 10) — provided by the owner from the dashboard |
+| Pagination | `p=<n>`; **max 20 distinct pages per query**, later pages repeat the last one → 2 000 deals with 100/page |
 | Province filter | `cityId=<1–81>` (partner's own ids, roughly Turkish alphabetical: 1 Adana, 7 Ankara, 8 Antalya, 21 Bursa, 32 Eskişehir, 41 İstanbul, 42 İzmir, 53 Kocaeli, 59 Muğla; 82 = all) |
 | District filter | `townId=<id>` (ids not enumerated; wrong ids return 0 results) |
 | Result order per province | local deals first, then the ~78 nationwide deals (empty `city`); single nationwide deals can appear mid-list |
 | Tracking | `showDealUrl`/`buyDealUrl` carry `pid=<publisherId>` |
+| Etkinlik API | `/deal/event-deals.html` (same auth, `cityId`, `itemInPage`, `p`) → `{ result, page, itemInPage, total, events: [...] }`, one record per **session**: `dealId`, `subDealId`, `eventTitle`, `eventDate`, `realPrice`, `dealPrice`, `businessTitle/Address/Town/City`, `dealUrl` (pid), `image400x400`, `image1200x1200`; pages beyond the end omit `events` |
 
 Field mapping (`FBF_FIELD_MAP` in `src/lib/providers/firsatbufirsat/index.ts`): `id`, `title`, `description`,
 `businessData[0].title` (merchant), `businessData[0].address`, `city`, `town`, `realPriceWithSymbol` (original),
@@ -47,21 +48,26 @@ Field mapping (`FBF_FIELD_MAP` in `src/lib/providers/firsatbufirsat/index.ts`): 
 `true` means no date), `detail` + `howToUse` (conditions), `tags` (comma list → category mapping; there is no
 category field), `subDeals` (options with their own prices).
 
-### Sweep strategy (why "il il" requests are needed)
+### Import strategy
 
-Unfiltered queries stop at 200 deals, so the adapter sweeps all 81 provinces (`FIRSATBUFIRSAT_CITY_IDS=all`):
-each province is paged until its local deals end (the page ends in ≥2 nationwide deals); the nationwide tail is
-collected once. Measured: **154 requests, ~56 s, 851 unique deals** (of 1 946 listed). The gap is İstanbul
-(1 361 deals, capped at 200 per query) — add district queries to `FIRSATBUFIRSAT_QUERIES`
-(`cityId=41&townId=<id>|…`) once the district ids are known; the build log reports how many records were cut off.
+1. **Catalog**: one unfiltered query with `itemInPage=100`, paged with `p` until a short or repeated page
+   (≈ 20 requests for ≈ 1 950 deals).
+2. **Province sweep** (`FIRSATBUFIRSAT_CITY_IDS=auto`): only if the catalog was cut off by the 20-page limit;
+   each province is paged until its local deals end (page ends in ≥ 2 nationwide deals).
+3. **Events**: the Etkinlik API is paged the same way (≈ 19 requests for ≈ 1 870 sessions); past sessions are dropped,
+   sessions are grouped by `dealId` and attached to the matching deal (category set to `etkinlik`); events without a
+   deal become their own deal ("Başlangıç fiyatı" when session prices differ).
+
+Measured 2026-10-16: **39 requests, ~30 s, 1 944 deals, 550 with an event calendar, 11 event-only deals.**
 
 ### Activation steps
 
 1. **Rotate the API key** in the publisher dashboard if it was ever shared outside the dashboard.
 2. Netlify → environment variables: `FIRSATBUFIRSAT_API_KEY` (secret) and `FIRSATBUFIRSAT_PUBLISHER_ID`,
    scopes Builds + Functions. Redeploy.
-3. Optional local check: `npm run provider:inspect` (one page, structure) or `npm run provider:inspect -- --sweep`
-   (full import with category/city statistics). In restricted sandboxes prefix with `NODE_USE_ENV_PROXY=1`.
+3. Optional local check: `npm run provider:inspect` (one page, structure), `npm run provider:inspect -- --events`
+   (Etkinlik API page) or `npm run provider:inspect -- --sweep` (full import with category/city statistics).
+   In restricted sandboxes prefix with `NODE_USE_ENV_PROXY=1`.
 4. Confirm clicks in Günlük Raporlar → set `FIRSATBUFIRSAT_TRACKING_VERIFIED=true`.
 
 ### Tracking / attribution

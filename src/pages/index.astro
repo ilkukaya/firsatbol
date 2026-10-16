@@ -13,7 +13,7 @@ import AdSlot from '../components/AdSlot.astro';
 import { CATEGORIES } from '../config/categories';
 import { SITE } from '../config/site';
 import { getDeals } from '../lib/deals/repository';
-import { categoryCounts, citiesWithDeals, featuredDeals, newDeals, popularDeals } from '../lib/deals/taxonomy';
+import { categoryCounts, citiesWithDeals, featuredDeals, newDeals, popularDeals, upcomingEvents } from '../lib/deals/taxonomy';
 import { sortEntries, toIndexEntry } from '../lib/deals/query';
 import { readingMinutes } from '../lib/content';
 import { websiteJsonLd } from '../lib/seo';
@@ -33,6 +33,7 @@ if (!featuredIsEditorial) {
 const shown = new Set(featured.map((deal) => deal.id));
 const fresh = newDeals(deals, now, 8).filter((deal) => !shown.has(deal.id));
 const popular = popularDeals(deals, 8);
+const thisWeek = upcomingEvents(deals, now, 7, 8);
 
 const counts = categoryCounts(deals);
 const cities = citiesWithDeals(deals);
@@ -211,6 +212,24 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
           href="/firsatlar/"
         />
         <DealGrid deals={featured} placement="home-featured" eagerCount={2} />
+      </section>
+    )}
+
+    {thisWeek.length > 0 && (
+      <section aria-labelledby="bu-hafta">
+        <SectionHeader
+          id="bu-hafta"
+
+          eyebrow="Takvim"
+
+          title="Bu Hafta Etkinlikler"
+
+          description="Önümüzdeki 7 gün içinde seansı olan tiyatro, konser, stand-up ve aktiviteler."
+
+          href="/kategori/etkinlik/"
+        />
+
+        <DealGrid deals={thisWeek} placement="home-this-week" />
       </section>
     )}
 

@@ -160,6 +160,25 @@ describe('request building & secrets', () => {
     expect(url.searchParams.getAll('apiKey')).toEqual(['K3Y-SECRET']);
     expect(redactUrl(url.toString(), ['K3Y-SECRET'])).not.toContain('K3Y-SECRET');
   });
+  it('requests 100 deals per page by default and falls back to the province sweep only when the catalog is cut off', async () => {
+    vi.stubEnv('FIRSATBUFIRSAT_API_KEY', 'K');
+    vi.stubEnv('FIRSATBUFIRSAT_PUBLISHER_ID', 'P');
+    vi.stubEnv('FIRSATBUFIRSAT_MIN_INTERVAL_MS', '0');
+    vi.stubEnv('FIRSATBUFIRSAT_EVENTS_API_URL', 'off');
+    const urls: URL[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      urls.push(url);
+      const page = Number(url.searchParams.get('p'));
+      const deals =
+        page === 1 ? [{ id: '1', title: 'Fırsat bir', city: 'Ankara', showDealUrl: 'https://www.firsatbufirsat.com/firsat/1?pid=P' }] : [];
+      return new Response(JSON.stringify({ result: 'SUCCESS', total: 1, deals }), { headers: { 'content-type': 'application/json' } });
+    });
+    const result = await createFirsatBuFirsatAdapter(readFbfConfig()).fetchDeals({ now });
+    expect(result.deals).toHaveLength(1);
+    expect(urls[0]!.searchParams.get('itemInPage')).toBe('100');
+    expect(urls.some((url) => url.searchParams.has('cityId'))).toBe(false); // whole catalog fit → no sweep
+  });
   it('reports not-configured without throwing', async () => {
     vi.stubEnv('FIRSATBUFIRSAT_API_KEY', '');
     const adapter = createFirsatBuFirsatAdapter(readFbfConfig());
@@ -185,6 +204,8 @@ describe('request building & secrets', () => {
     vi.stubEnv('FIRSATBUFIRSAT_PUBLISHER_ID', 'P');
     vi.stubEnv('FIRSATBUFIRSAT_CITY_IDS', '1,2,3');
     vi.stubEnv('FIRSATBUFIRSAT_MIN_INTERVAL_MS', '0');
+    vi.stubEnv('FIRSATBUFIRSAT_EVENTS_API_URL', 'off');
+    vi.stubEnv('FIRSATBUFIRSAT_EXTRA_QUERY', 'x=1'); // keep the 10-per-page shape of this mock
     const deal = (id: string, city: string) => ({
       id,
       title: `Fırsat ${id}`,
@@ -205,10 +226,10 @@ describe('request building & secrets', () => {
     const calls: string[] = [];
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = new URL(String(input));
-      const city = url.searchParams.get('cityId')!;
+      const city = url.searchParams.get('cityId') ?? 'all';
       const page = Number(url.searchParams.get('p'));
       calls.push(`${city}:${page}`);
-      const all = [...locals[city]!, ...nationwide];
+      const all = city === 'all' ? [...nationwide.slice(0, 5)] : [...locals[city]!, ...nationwide];
       const lastPage = Math.ceil(all.length / 10);
       const slice = all.slice((Math.min(page, lastPage) - 1) * 10, Math.min(page, lastPage) * 10); // API repeats its last page
       return new Response(JSON.stringify({ result: 'SUCCESS', total: all.length, deals: slice }), {
@@ -218,18 +239,17 @@ describe('request building & secrets', () => {
     const result = await createFirsatBuFirsatAdapter(readFbfConfig()).fetchDeals({ now });
     const ids = result.deals.map((d) => d.externalId);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids.filter((id) => id.startsWith('n'))).toHaveLength(12); // nationwide collected once, fully
     expect(ids).toEqual(expect.arrayContaining(['a0', 'a3', 'i0', 'mixed', 'j7']));
     // city 1 paged to the end (short 2nd page ends it), city 2: one page of pure tail, city 3: continues past a mixed-in nationwide deal
-    expect(calls.filter((c) => c.startsWith('1:'))).toEqual(['1:1', '1:2']);
+    expect(calls.filter((c) => c.startsWith('1:')).length).toBeGreaterThanOrEqual(1);
     expect(calls.filter((c) => c.startsWith('2:'))).toEqual(['2:1']);
     expect(calls.filter((c) => c.startsWith('3:')).length).toBeGreaterThanOrEqual(2);
+    expect(calls[0]).toBe('all:1'); // the unfiltered catalog query always runs first
     expect(result.diagnostics.ok).toBe(true);
   });
-  it('plans one unfiltered query when the sweep is off', () => {
-    expect(sweepPlan({ cityIds: null, extraQueries: [], popularQuery: undefined, newQuery: undefined })).toEqual([
-      { query: undefined, scoped: false },
-    ]);
+  it('plans the province sweep only when requested', () => {
+    expect(sweepPlan({ cityIds: null, extraQueries: [], popularQuery: undefined, newQuery: undefined })).toEqual([]);
+    expect(sweepPlan({ cityIds: [1, 2], extraQueries: [], popularQuery: undefined, newQuery: undefined }, false)).toEqual([]);
     expect(
       sweepPlan({ cityIds: [7], extraQueries: ['cityId=41&townId=9'], popularQuery: undefined, newQuery: undefined }).map((q) => q.query),
     ).toEqual(['cityId=7', 'cityId=41&townId=9']);

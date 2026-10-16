@@ -10,7 +10,7 @@ import { getCategory } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
 import type { Deal } from '../../lib/deals/schema';
 import { relatedDeals } from '../../lib/deals/taxonomy';
-import { formatDate, formatDateTime, formatPrice } from '../../lib/format';
+import { formatDate, formatDateTime, formatPrice, formatSessionLong } from '../../lib/format';
 import { breadcrumbJsonLd } from '../../lib/seo';
 
 export const getStaticPaths = (async () => {
@@ -122,6 +122,44 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
             </p>
           )}
         </div>
+
+        {deal.sessions.length > 0 && (
+          <section class="mt-8" aria-labelledby="takvim">
+            <h2 id="takvim" class="font-display text-xl font-bold">
+              Etkinlik takvimi
+            </h2>
+
+            <ul class="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
+              {deal.sessions.map((session) => (
+                <li class="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3">
+                  <span class="min-w-0">
+                    <span class="block font-semibold text-ink">{formatSessionLong(session.date)}</span>
+
+                    <span class="block text-sm text-muted">
+                      {[session.venue, session.district, session.city].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+
+                  <span class="shrink-0 text-right">
+                    {session.originalPrice !== null && (
+                      <span class="block text-xs text-muted line-through">
+                        <span class="sr-only">Önceki fiyat:</span>
+
+                        {formatPrice(session.originalPrice, deal.currency)}
+                      </span>
+                    )}
+
+                    {session.price !== null && <span class="font-bold text-ink">{formatPrice(session.price, deal.currency)}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p class="mt-2 text-xs text-muted">
+              Seans bilgileri Fırsat Bu Fırsat Etkinlik API’sinden alınmıştır; koltuk ve seans durumunu satıcı sayfasında kontrol edin.
+            </p>
+          </section>
+        )}
 
         {deal.options.length > 0 && (
           <section class="mt-8" aria-labelledby="secenekler">
@@ -242,6 +280,12 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
               <div class="flex justify-between gap-4">
                 <dt class="text-muted">Başlangıç</dt>
                 <dd class="font-semibold">{formatDate(deal.validFrom)}</dd>
+              </div>
+            )}
+            {deal.sessions[0] && (
+              <div class="flex justify-between gap-4">
+                <dt class="text-muted">Sonraki seans</dt>
+                <dd class="text-right font-semibold">{formatDateTime(deal.sessions[0].date)}</dd>
               </div>
             )}
             {deal.validUntil && (

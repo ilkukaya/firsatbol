@@ -47,12 +47,27 @@ export function toIndexEntry(deal: Deal): DealIndexEntry {
     vu: deal.validUntil,
     vf: deal.validFrom,
     f: deal.featured ? 1 : 0,
-    q: searchFold([deal.title, deal.merchant, deal.city, deal.district, deal.sourceCategory, ...deal.tags].filter(Boolean).join(' ')),
+    ns: deal.sessions[0]?.date ?? null,
+    pf: deal.priceFrom ? 1 : 0,
+    // only terms not already in the entry (tags, provider category); the rest is folded on demand
+    q: searchFold([deal.sourceCategory, ...deal.tags].filter(Boolean).join(' ')),
   };
 }
 
 export function merchantKey(merchant: string): string {
   return searchFold(merchant).replace(/ /g, '-');
+}
+
+const haystacks = new WeakMap<DealIndexEntry, string>();
+
+/** Folded search text of an entry: title, merchant, city, district + indexed extra terms. */
+export function searchText(entry: DealIndexEntry): string {
+  let text = haystacks.get(entry);
+  if (text === undefined) {
+    text = `${searchFold([entry.t, entry.m, entry.cn, entry.d].filter(Boolean).join(' '))} ${entry.q}`;
+    haystacks.set(entry, text);
+  }
+  return text;
 }
 
 export function filterEntries(entries: readonly DealIndexEntry[], filters: DealFilters): DealIndexEntry[] {
@@ -61,7 +76,7 @@ export function filterEntries(entries: readonly DealIndexEntry[], filters: DealF
     if (filters.kategori && entry.c !== filters.kategori) return false;
     if (filters.sehir && entry.ct !== filters.sehir) return false;
     if (filters.magaza && (!entry.m || merchantKey(entry.m) !== filters.magaza)) return false;
-    return terms.every((term) => entry.q.includes(term));
+    return terms.every((term) => searchText(entry).includes(term));
   });
 }
 

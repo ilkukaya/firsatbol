@@ -50,3 +50,31 @@ export function isoDateInIstanbul(value: Date): string {
 export function pluralFirsat(count: number): string {
   return `${count.toLocaleString(LOCALE)} fırsat`;
 }
+
+const sessionFormatter = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TIME_ZONE,
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const sessionLongFormatter = new Intl.DateTimeFormat(LOCALE, {
+  timeZone: TIME_ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** "Cum 18 Eki 20:30" — compact event session label. */
+export function formatSession(value: string | Date): string {
+  return sessionFormatter.format(typeof value === 'string' ? new Date(value) : value);
+}
+
+export function formatSessionLong(value: string | Date): string {
+  return sessionLongFormatter.format(typeof value === 'string' ? new Date(value) : value);
+}

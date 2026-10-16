@@ -111,11 +111,24 @@ function loadFixtureDeals(now: Date): Deal[] {
     now,
   );
   // Give the fixture deterministic signals so every homepage section can be previewed.
+  const day = 24 * 60 * 60 * 1000;
+  const session = (offsetDays: number, price: number) => ({
+    date: new Date(now.getTime() + offsetDays * day).toISOString(),
+    venue: 'Örnek Sahne',
+    address: 'Örnek Mah. Örnek Cad. No:1',
+    city: 'İzmir',
+    citySlug: 'izmir',
+    district: 'Konak',
+    price,
+    originalPrice: null,
+  });
   return result.deals.map((deal, index) => ({
     ...deal,
     featured: index < 4,
     popular: index % 3 === 0,
     isNew: index % 2 === 0,
+    // synthetic event calendar for the sample stand-up deal
+    ...(deal.externalId === '1004' ? { sessions: [session(2, 450), session(5, 400), session(12, 450)], priceFrom: true, price: 400 } : {}),
   }));
 }
 
@@ -167,6 +180,8 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       isNew: false,
       conditions: data.conditions,
       options: [],
+      sessions: [],
+      priceFrom: false,
       tags: data.tags,
       indexable: computeIndexable(summary, description, true),
     };

@@ -17,6 +17,14 @@ const priceFormat = new Intl.NumberFormat('tr-TR', {
   maximumFractionDigits: 2,
 });
 const dateFormat = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'long', year: 'numeric' });
+const sessionFormat = new Intl.DateTimeFormat('tr-TR', {
+  timeZone: 'Europe/Istanbul',
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]!);
@@ -42,12 +50,16 @@ function renderCard(entry: DealIndexEntry, categoryNames: Record<string, string>
       : '';
   const meta = [
     location ? `<li class="flex min-w-0 items-center gap-1">${icon('pin')}<span class="truncate">${escapeHtml(location)}</span></li>` : '',
-    entry.vu ? `<li class="flex items-center gap-1">${icon('clock')}Son kullanım ${dateFormat.format(new Date(entry.vu))}</li>` : '',
+    entry.ns
+      ? `<li class="flex items-center gap-1 font-semibold text-ink-2">${icon('calendar')}${sessionFormat.format(new Date(entry.ns))}</li>`
+      : entry.vu
+        ? `<li class="flex items-center gap-1">${icon('clock')}Son kullanım ${dateFormat.format(new Date(entry.vu))}</li>`
+        : '',
   ].join('');
   const showOriginal = entry.op !== null && entry.p !== null && entry.op > entry.p;
   const price =
     entry.p !== null
-      ? `<p class="flex flex-col leading-tight">${showOriginal ? `<span class="text-[0.8rem] text-muted line-through"><span class="sr-only">Önceki fiyat:</span>${formatPrice(entry.op!, entry.cur)}</span>` : ''}<span class="text-xl font-extrabold tracking-tight text-ink">${formatPrice(entry.p, entry.cur)}</span></p>`
+      ? `<p class="flex flex-col leading-tight">${showOriginal ? `<span class="text-[0.8rem] text-muted line-through"><span class="sr-only">Önceki fiyat:</span>${formatPrice(entry.op!, entry.cur)}</span>` : ''}${entry.pf ? '<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted">Başlangıç fiyatı</span>' : ''}<span class="text-xl font-extrabold tracking-tight text-ink">${formatPrice(entry.p, entry.cur)}</span></p>`
       : '<p class="text-sm font-medium leading-tight text-muted">Fiyat satıcı<br>sayfasında</p>';
   const category = categoryNames[entry.c] ?? '';
   const expired = entry.vu !== null && Date.parse(entry.vu) < Date.now();

@@ -444,6 +444,8 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     isNew: parseBoolean(raw.isNew),
     conditions: parseStringList(raw.conditions).slice(0, 20),
     options: parseOptions(raw.options),
+    sessions: [],
+    priceFrom: false,
     tags,
     indexable: computeIndexable(summary, description, ctx.indexProviderPages),
   };

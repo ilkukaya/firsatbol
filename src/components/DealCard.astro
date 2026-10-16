@@ -1,7 +1,7 @@
 ---
 import Icon from './Icon.astro';
 import { getCategory } from '../config/categories';
-import { formatDate, formatPrice } from '../lib/format';
+import { formatDate, formatPrice, formatSession } from '../lib/format';
 import type { Deal } from '../lib/deals/schema';
 
 interface Props {
@@ -65,7 +65,7 @@ const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.
         {deal.title}
       </a>
     </Heading>
-    {(location || deal.validUntil) && (
+    {(location || deal.validUntil || deal.sessions.length > 0) && (
       <ul class="flex flex-wrap gap-x-3 gap-y-1 text-[0.82rem] text-muted">
         {location && (
           <li class="flex min-w-0 items-center gap-1">
@@ -73,11 +73,19 @@ const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.
             <span class="truncate">{location}</span>
           </li>
         )}
-        {deal.validUntil && (
-          <li class="flex items-center gap-1">
-            <Icon name="clock" size={14} />
-            Son kullanım {formatDate(deal.validUntil)}
+        {deal.sessions[0] ? (
+          <li class="flex items-center gap-1 font-semibold text-ink-2">
+            <Icon name="calendar" size={14} />
+            {formatSession(deal.sessions[0].date)}
+            {deal.sessions.length > 1 && <span class="font-normal text-muted">· {deal.sessions.length} seans</span>}
           </li>
+        ) : (
+          deal.validUntil && (
+            <li class="flex items-center gap-1">
+              <Icon name="clock" size={14} />
+              Son kullanım {formatDate(deal.validUntil)}
+            </li>
+          )
         )}
       </ul>
     )}
@@ -91,6 +99,7 @@ const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.
                 {formatPrice(deal.originalPrice!, deal.currency)}
               </span>
             )}
+            {deal.priceFrom && <span class="text-[0.7rem] font-semibold uppercase tracking-wide text-muted">Başlangıç fiyatı</span>}
             <span class="text-xl font-extrabold tracking-tight text-ink">{formatPrice(deal.price, deal.currency)}</span>
           </p>
         ) : (
