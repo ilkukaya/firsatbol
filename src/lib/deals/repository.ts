@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 import { normalizeCity } from '../../config/cities';
 import { readBool, readEnv, isProductionContext } from '../env';
 import { getNetworkProviders } from '../providers/registry';
-import { transformResponse } from '../providers/firsatbufirsat';
+import { FBF_FIELD_MAP, transformResponse } from '../providers/firsatbufirsat';
 import type { ProviderDiagnostics } from '../providers/types';
 import { buildSlug, computeIndexable, dedupeDeals, ensureUniqueSlugs, isActive, markDuplicateTitles, resolveDiscount } from './normalize';
 import { dealSchema, type Deal } from './schema';
@@ -100,7 +100,7 @@ function loadFixtureDeals(now: Date): Deal[] {
     {
       id: 'firsatbufirsat',
       name: 'Fırsat Bu Fırsat',
-      fieldMap: {},
+      fieldMap: FBF_FIELD_MAP,
       publisherId: 'PUBLISHER_TEST',
       apiKey: undefined,
       trackingVerified: false,
@@ -143,6 +143,7 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       category: data.category,
       sourceCategory: null,
       merchant: data.merchant,
+      address: null,
       city: city?.name ?? null,
       citySlug: city?.slug ?? null,
       district: data.district ?? null,
@@ -152,6 +153,7 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       discountPercent: discount.percent,
       discountSource: discount.source,
       imageUrl: data.imageUrl ?? null,
+      imageLargeUrl: null,
       sourceUrl: data.sourceUrl,
       affiliateUrl: data.affiliateUrl ?? null,
       trackingStatus: data.affiliateUrl ? 'provider-tracked' : 'none',
@@ -164,6 +166,7 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       popular: false,
       isNew: false,
       conditions: data.conditions,
+      options: [],
       tags: data.tags,
       indexable: computeIndexable(summary, description, true),
     };

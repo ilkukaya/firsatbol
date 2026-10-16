@@ -41,6 +41,11 @@ export interface ProviderAdapter {
   name: string;
   isConfigured(): boolean;
   fetchDeals(options: ProviderFetchOptions): Promise<ProviderResult>;
+  /**
+   * Optional cheap change signature (e.g. total + first page ids) used by the scheduled sync
+   * instead of a full fetch. Different signature ⇒ data probably changed ⇒ rebuild.
+   */
+  probe?(options: ProviderFetchOptions): Promise<string>;
 }
 
 export function emptyDiagnostics(providerId: string, providerName: string, configured: boolean): ProviderDiagnostics {

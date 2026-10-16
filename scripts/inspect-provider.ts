@@ -10,7 +10,7 @@
  * Secrets are redacted from everything printed.
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { buildRequestUrl, readFbfConfig, transformResponse } from '../src/lib/providers/firsatbufirsat';
+import { buildRequestUrl, createFirsatBuFirsatAdapter, readFbfConfig, transformResponse } from '../src/lib/providers/firsatbufirsat';
 import { mapRecord } from '../src/lib/providers/fields';
 import { fetchText, redactUrl } from '../src/lib/providers/http';
 import { describeShape, detectFormat, extractRecords, parseBody } from '../src/lib/providers/parse';
@@ -29,6 +29,24 @@ if (!config.apiKey || !config.publisherId || !config.endpoint) {
 }
 const secrets = [config.apiKey, config.publisherId];
 const redact = (text: string) => secrets.reduce((value, secret) => value.split(secret).join('***'), text);
+
+if (process.argv.includes('--sweep')) {
+  // Full import exactly as the build does it (all configured queries, pagination, dedupe).
+  const { deals, diagnostics } = await createFirsatBuFirsatAdapter(config).fetchDeals({ now: new Date() });
+  const count = (key: (deal: (typeof deals)[number]) => string) => {
+    const map = new Map<string, number>();
+    for (const deal of deals) map.set(key(deal), (map.get(key(deal)) ?? 0) + 1);
+    return [...map.entries()].sort((a, b) => b[1] - a[1]);
+  };
+  console.log(redact(JSON.stringify({ ...diagnostics, rejectReasons: diagnostics.rejectReasons }, null, 2)));
+  console.log(`\nBenzersiz fırsat: ${deals.length}`);
+  console.log('Kategoriler:', JSON.stringify(count((deal) => deal.category)));
+  console.log('Şehirler (ilk 15):', JSON.stringify(count((deal) => deal.city ?? '(Türkiye geneli)').slice(0, 15)));
+  console.log(
+    `İndirimi doğrulanabilen: ${deals.filter((deal) => deal.discountPercent !== null).length} · referans linkli: ${deals.filter((deal) => deal.affiliateUrl).length} · görselli: ${deals.filter((deal) => deal.imageUrl).length} · bitiş tarihli: ${deals.filter((deal) => deal.validUntil).length}`,
+  );
+  process.exit(diagnostics.ok ? 0 : 1);
+}
 
 const url = buildRequestUrl(config, undefined, config.pageParam ? config.pageStart : null);
 console.log(`İstek: ${redactUrl(url, secrets)}`);

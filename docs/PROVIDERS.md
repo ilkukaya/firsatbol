@@ -25,40 +25,44 @@ Adapters return **normalised, Zod-validated** `Deal` objects (`src/lib/deals/sch
 
 Registered sources live in `src/lib/providers/registry.ts`.
 
-## Fırsat Bu Fırsat (first provider)
+## Fırsat Bu Fırsat (first provider) — verified 2026-10-16
 
-**Confirmed** (publisher dashboard): endpoint `https://api.firsatbufirsat.com/deal/browse.html` and the `apiKey`
-and `publisherId` parameters.
+Verified against real responses with the owner's credentials:
 
-**Not confirmed yet**: response format/schema, filter and pagination parameter names. The adapter therefore:
+| Fact | Value |
+| --- | --- |
+| Endpoint | `https://api.firsatbufirsat.com/deal/browse.html?apiKey=…&publisherId=…` |
+| Format | JSON `{ result: "SUCCESS", resultMessage, total, deals: [...] }` — non-SUCCESS results fail the build (production) |
+| Page size | 10 deals, not configurable (20+ candidate parameter names tested without effect) |
+| Pagination | `p=<n>`; **max 20 distinct pages (200 deals) per query**, later pages repeat the last one |
+| Province filter | `cityId=<1–81>` (partner's own ids, roughly Turkish alphabetical: 1 Adana, 7 Ankara, 8 Antalya, 21 Bursa, 32 Eskişehir, 41 İstanbul, 42 İzmir, 53 Kocaeli, 59 Muğla; 82 = all) |
+| District filter | `townId=<id>` (ids not enumerated; wrong ids return 0 results) |
+| Result order per province | local deals first, then the ~78 nationwide deals (empty `city`); single nationwide deals can appear mid-list |
+| Tracking | `showDealUrl`/`buyDealUrl` carry `pid=<publisherId>` |
 
-1. sends `apiKey` + `publisherId` server-side (build or function only) and any extra parameters **you** copy from
-   the dashboard's generated URL into `FIRSATBUFIRSAT_EXTRA_QUERY` (we do not invent names);
-2. detects JSON or XML (HTML responses are rejected with a clear message);
-3. locates the record list automatically and maps fields via candidate keys (`src/lib/providers/fields.ts`);
-4. lets you pin exact fields with `FIRSATBUFIRSAT_FIELD_MAP` once you have seen a real response.
+Field mapping (`FBF_FIELD_MAP` in `src/lib/providers/firsatbufirsat/index.ts`): `id`, `title`, `description`,
+`businessData[0].title` (merchant), `businessData[0].address`, `city`, `town`, `realPriceWithSymbol` (original),
+`dealPriceWithSymbol` (price), `discountPercent` ("0" when no discount → not shown), `image450_H` (cards),
+`image1200x1200` (detail), `showDealUrl` (outbound, tracked), `couponEndDate` (voucher end, shown as "Son kullanım";
+`true` means no date), `detail` + `howToUse` (conditions), `tags` (comma list → category mapping; there is no
+category field), `subDeals` (options with their own prices).
+
+### Sweep strategy (why "il il" requests are needed)
+
+Unfiltered queries stop at 200 deals, so the adapter sweeps all 81 provinces (`FIRSATBUFIRSAT_CITY_IDS=all`):
+each province is paged until its local deals end (the page ends in ≥2 nationwide deals); the nationwide tail is
+collected once. Measured: **154 requests, ~56 s, 851 unique deals** (of 1 946 listed). The gap is İstanbul
+(1 361 deals, capped at 200 per query) — add district queries to `FIRSATBUFIRSAT_QUERIES`
+(`cityId=41&townId=<id>|…`) once the district ids are known; the build log reports how many records were cut off.
 
 ### Activation steps
 
 1. **Rotate the API key** in the publisher dashboard if it was ever shared outside the dashboard.
-2. Locally, create `.env` with `FIRSATBUFIRSAT_API_KEY` and `FIRSATBUFIRSAT_PUBLISHER_ID`, then run:
-   ```bash
-   npm run provider:inspect            # deals API
-   npm run provider:inspect -- --events   # Etkinlik API (needs FIRSATBUFIRSAT_EVENTS_API_URL)
-   ```
-   It prints the format, structure, record keys, which keys were mapped, how many records normalise, and saves the
-   (secret-redacted) raw response to `.cache/` (git-ignored).
-3. If a field maps wrongly, set e.g. `FIRSATBUFIRSAT_FIELD_MAP={"title":"name","price":"prices.deal","sourceUrl":"link"}`.
-   Paths are dotted, case/underscore-insensitive; array indexes allowed (`images.0`).
-4. Optional parameters (copy names/values exactly from the dashboard):
-   * `FIRSATBUFIRSAT_EXTRA_QUERY` — channel, city, district, tags, page size…
-   * `FIRSATBUFIRSAT_POPULAR_QUERY` / `FIRSATBUFIRSAT_NEW_QUERY` — extra request whose results are labelled
-     popular/new (powers the homepage "Popüler" / "Yeni" sections with real provider signals).
-   * `FIRSATBUFIRSAT_PAGE_PARAM`, `FIRSATBUFIRSAT_PAGE_START`, `FIRSATBUFIRSAT_MAX_PAGES` — pagination; stops early on
-     an empty or repeated page.
-5. Add the same variables in Netlify (scopes: **Builds** and **Functions**; mark the key as secret) and redeploy.
-6. Please send the inspection output (it contains no secrets) so the field map and a real-shaped test fixture can
-   be committed.
+2. Netlify → environment variables: `FIRSATBUFIRSAT_API_KEY` (secret) and `FIRSATBUFIRSAT_PUBLISHER_ID`,
+   scopes Builds + Functions. Redeploy.
+3. Optional local check: `npm run provider:inspect` (one page, structure) or `npm run provider:inspect -- --sweep`
+   (full import with category/city statistics). In restricted sandboxes prefix with `NODE_USE_ENV_PROXY=1`.
+4. Confirm clicks in Günlük Raporlar → set `FIRSATBUFIRSAT_TRACKING_VERIFIED=true`.
 
 ### Tracking / attribution
 

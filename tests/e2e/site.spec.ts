@@ -68,7 +68,7 @@ test('deal detail: outbound link keeps referral URL, disclosure and attribution'
   await page.goto('/firsat/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
   await expect(page.locator('h1')).toContainText('Boğaz manzaralı');
   const cta = page.locator('a[data-placement="detail"]');
-  await expect(cta).toHaveAttribute('href', 'https://example.com/firsat/1001?ref=PUBLISHER_TEST');
+  await expect(cta).toHaveAttribute('href', 'https://example.com/firsat/1001?pid=PUBLISHER_TEST');
   await expect(cta).toHaveAttribute('rel', /sponsored/);
   await expect(page.getByText('%35 indirim')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Fırsat özeti' }).getByText('iş ortaklığı bağlantısıdır')).toBeVisible();

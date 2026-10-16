@@ -1,265 +1,576 @@
 {
- "_comment": "SENTETİK GELİŞTİRME VERİSİ - gerçek fırsat değildir; gerçek API şeması doğrulanmadı.",
- "status": "ok",
+ "_comment": "SENTETİK GELİŞTİRME VERİSİ (gerçek Fırsat Bu Fırsat şemasında) - gerçek fırsat değildir.",
+ "result": "SUCCESS",
+ "resultMessage": "",
+ "total": 16,
  "deals": [
   {
    "id": "1001",
    "title": "ÖRNEK VERİ — Boğaz manzaralı serpme kahvaltı (2 kişilik)",
-   "merchant": "Örnek Kahvaltı Evi",
-   "category": "Yeme İçme",
-   "city": "İstanbul",
-   "district": "Beşiktaş",
-   "oldPrice": 1200,
-   "price": 780,
-   "startDate": "2026-10-01",
-   "endDate": "2026-12-31",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Boğaz manzaralı serpme kahvaltı (2 kişilik) için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1001?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Hafta içi geçerlidir.",
-    "Rezervasyon zorunludur."
-   ]
+   "detail": "Hafta içi geçerlidir.\r\nRezervasyon zorunludur.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-31 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Kahvaltı Evi",
+     "address": "Örnek Mah. Örnek Cad. No:1 Beşiktaş / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "Beşiktaş",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "1200 ₺",
+   "dealPriceWithSymbol": "780 ₺",
+   "showDealUrl": "https://example.com/firsat/1001?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "yeme i̇çme",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "1200 ₺",
+     "dealPriceWithSymbol": "780 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1002",
    "title": "ÖRNEK VERİ — 60 dakika aromaterapi masajı",
-   "merchant": "Örnek Spa Merkezi",
-   "category": "Güzellik & Spa",
-   "city": "Ankara",
-   "district": "Çankaya",
-   "oldPrice": 1500,
-   "price": 900,
-   "startDate": "2026-10-10",
-   "endDate": "2026-11-30",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. 60 dakika aromaterapi masajı için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1002?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Randevu ile."
-   ]
+   "detail": "Randevu ile.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-30 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Spa Merkezi",
+     "address": "Örnek Mah. Örnek Cad. No:1 Çankaya / Ankara"
+    }
+   ],
+   "city": "Ankara",
+   "town": "Çankaya",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "1500 ₺",
+   "dealPriceWithSymbol": "900 ₺",
+   "showDealUrl": "https://example.com/firsat/1002?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "güzellik & spa",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "1500 ₺",
+     "dealPriceWithSymbol": "900 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1003",
    "title": "ÖRNEK VERİ — Termal otelde 1 gece konaklama + kahvaltı",
-   "merchant": "Örnek Termal Otel",
-   "category": "Tatil / Otel",
-   "city": "Bursa",
-   "district": "Osmangazi",
-   "oldPrice": 4800,
-   "price": 3360,
-   "startDate": "2026-09-20",
-   "endDate": "2027-01-15",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Termal otelde 1 gece konaklama + kahvaltı için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1003?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Bayram dönemleri hariçtir."
-   ]
+   "detail": "Bayram dönemleri hariçtir.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2027-01-15 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Termal Otel",
+     "address": "Örnek Mah. Örnek Cad. No:1 Osmangazi / Bursa"
+    }
+   ],
+   "city": "Bursa",
+   "town": "Osmangazi",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "4800 ₺",
+   "dealPriceWithSymbol": "3360 ₺",
+   "showDealUrl": "https://example.com/firsat/1003?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "tatil / otel",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "4800 ₺",
+     "dealPriceWithSymbol": "3360 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1004",
    "title": "ÖRNEK VERİ — Stand-up gösterisi bileti",
-   "merchant": "Örnek Sahne",
-   "category": "Etkinlik",
-   "city": "İzmir",
-   "district": "Konak",
-   "oldPrice": 650,
-   "price": 450,
-   "startDate": "2026-10-12",
-   "endDate": "2026-11-20",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Stand-up gösterisi bileti için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1004?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Etkinlik 18 yaş üzeri içindir."
-   ]
+   "detail": "Etkinlik 18 yaş üzeri içindir.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-20 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Sahne",
+     "address": "Örnek Mah. Örnek Cad. No:1 Konak / İzmir"
+    }
+   ],
+   "city": "İzmir",
+   "town": "Konak",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "650 ₺",
+   "dealPriceWithSymbol": "450 ₺",
+   "showDealUrl": "https://example.com/firsat/1004?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "etkinlik",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "650 ₺",
+     "dealPriceWithSymbol": "450 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1005",
    "title": "ÖRNEK VERİ — Koltuk yıkama hizmeti (3+3+1)",
-   "merchant": "Örnek Temizlik",
-   "category": "Ev Hizmetleri",
-   "city": "İstanbul",
-   "district": "Kadıköy",
-   "oldPrice": 2200,
-   "price": 1450,
-   "startDate": "2026-10-05",
-   "endDate": "2026-12-15",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Koltuk yıkama hizmeti (3+3+1) için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1005?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-15 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Temizlik",
+     "address": "Örnek Mah. Örnek Cad. No:1 Kadıköy / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "Kadıköy",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "2200 ₺",
+   "dealPriceWithSymbol": "1450 ₺",
+   "showDealUrl": "https://example.com/firsat/1005?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "ev hizmetleri",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "2200 ₺",
+     "dealPriceWithSymbol": "1450 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1006",
    "title": "ÖRNEK VERİ — Bluetooth kulaklık",
-   "merchant": "Örnek Elektronik",
-   "category": "Teknoloji",
-   "city": "",
-   "district": null,
-   "oldPrice": "1.899,90 TL",
-   "price": "1.299,90 TL",
-   "startDate": "2026-10-14",
-   "endDate": "2026-11-10",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Bluetooth kulaklık için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1006?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Stoklarla sınırlıdır."
-   ]
+   "detail": "Stoklarla sınırlıdır.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-10 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Elektronik",
+     "address": "Örnek Mah. Örnek Cad. No:1  / "
+    }
+   ],
+   "city": "",
+   "town": "",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "1.899,90 TL",
+   "dealPriceWithSymbol": "1.299,90 TL",
+   "showDealUrl": "https://example.com/firsat/1006?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "teknoloji",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "1.899,90 TL",
+     "dealPriceWithSymbol": "1.299,90 TL"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1007",
    "title": "ÖRNEK VERİ — Pizza menü (2 kişilik)",
-   "merchant": "Örnek Pizzacı",
-   "category": "Yeme İçme",
-   "city": "Antalya",
-   "district": "Muratpaşa",
-   "oldPrice": 900,
-   "price": 590,
-   "startDate": "2026-10-15",
-   "endDate": "2026-11-15",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Pizza menü (2 kişilik) için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1007?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-15 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Pizzacı",
+     "address": "Örnek Mah. Örnek Cad. No:1 Muratpaşa / Antalya"
+    }
+   ],
+   "city": "Antalya",
+   "town": "Muratpaşa",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "900 ₺",
+   "dealPriceWithSymbol": "590 ₺",
+   "showDealUrl": "https://example.com/firsat/1007?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "yeme i̇çme",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "900 ₺",
+     "dealPriceWithSymbol": "590 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1008",
    "title": "ÖRNEK VERİ — Tekne turu (öğle yemeği dahil)",
-   "merchant": "Örnek Tur",
-   "category": "Tur",
-   "city": "Muğla",
-   "district": "Bodrum",
-   "oldPrice": 2500,
-   "price": 1750,
-   "startDate": "2026-10-01",
-   "endDate": "2026-11-30",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Tekne turu (öğle yemeği dahil) için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1008?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-30 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Tur",
+     "address": "Örnek Mah. Örnek Cad. No:1 Bodrum / Muğla"
+    }
+   ],
+   "city": "Muğla",
+   "town": "Bodrum",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "2500 ₺",
+   "dealPriceWithSymbol": "1750 ₺",
+   "showDealUrl": "https://example.com/firsat/1008?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "tur",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "2500 ₺",
+     "dealPriceWithSymbol": "1750 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1009",
    "title": "ÖRNEK VERİ — Sona ermiş kampanya",
-   "merchant": "Örnek Mağaza",
-   "category": "Alışveriş",
-   "city": "İstanbul",
-   "district": null,
-   "oldPrice": 500,
-   "price": 250,
-   "startDate": "2026-01-01",
-   "endDate": "2026-02-01",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Sona ermiş kampanya için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1009?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-02-01 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Mağaza",
+     "address": "Örnek Mah. Örnek Cad. No:1  / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "500 ₺",
+   "dealPriceWithSymbol": "250 ₺",
+   "showDealUrl": "https://example.com/firsat/1009?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "alışveriş",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "500 ₺",
+     "dealPriceWithSymbol": "250 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1010",
    "title": "ÖRNEK VERİ — Pilates 8 ders paketi",
-   "merchant": "Örnek Stüdyo",
-   "category": "Spor",
-   "city": "Eskişehir",
-   "district": "Tepebaşı",
-   "oldPrice": 3200,
-   "price": 1990,
-   "startDate": "2026-10-03",
-   "endDate": "2026-12-01",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Pilates 8 ders paketi için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1010?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-01 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Stüdyo",
+     "address": "Örnek Mah. Örnek Cad. No:1 Tepebaşı / Eskişehir"
+    }
+   ],
+   "city": "Eskişehir",
+   "town": "Tepebaşı",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "3200 ₺",
+   "dealPriceWithSymbol": "1990 ₺",
+   "showDealUrl": "https://example.com/firsat/1010?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "spor",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "3200 ₺",
+     "dealPriceWithSymbol": "1990 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1011",
    "title": "ÖRNEK VERİ — Fiyatı belirtilmemiş atölye",
-   "merchant": "Örnek Atölye",
-   "category": "Etkinlik",
-   "city": "Kocaeli",
-   "district": "İzmit",
-   "oldPrice": null,
-   "price": null,
-   "startDate": "2026-10-10",
-   "endDate": "2026-12-10",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Fiyatı belirtilmemiş atölye için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1011?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-10 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Atölye",
+     "address": "Örnek Mah. Örnek Cad. No:1 İzmit / Kocaeli"
+    }
+   ],
+   "city": "Kocaeli",
+   "town": "İzmit",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "",
+   "dealPriceWithSymbol": "",
+   "showDealUrl": "https://example.com/firsat/1011?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "etkinlik",
+   "subDeals": [],
+   "dealImages": []
   },
   {
    "id": "1012",
    "title": "ÖRNEK VERİ — Burger menü",
-   "merchant": "Örnek Burger",
-   "category": "Yeme İçme",
-   "city": "İstanbul",
-   "district": "Şişli",
-   "oldPrice": 450,
-   "price": 320,
-   "startDate": "2026-10-11",
-   "endDate": "2026-11-25",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Burger menü için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1012?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-11-25 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Burger",
+     "address": "Örnek Mah. Örnek Cad. No:1 Şişli / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "Şişli",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "450 ₺",
+   "dealPriceWithSymbol": "320 ₺",
+   "showDealUrl": "https://example.com/firsat/1012?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "yeme i̇çme",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "450 ₺",
+     "dealPriceWithSymbol": "320 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1013",
    "title": "ÖRNEK VERİ — Cilt bakımı",
-   "merchant": "Örnek Güzellik",
-   "category": "Güzellik",
-   "city": "İstanbul",
-   "district": "Bakırköy",
-   "oldPrice": 1800,
-   "price": 990,
-   "startDate": "2026-10-09",
-   "endDate": "2026-12-20",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Cilt bakımı için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1013?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-20 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Güzellik",
+     "address": "Örnek Mah. Örnek Cad. No:1 Bakırköy / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "Bakırköy",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "1800 ₺",
+   "dealPriceWithSymbol": "990 ₺",
+   "showDealUrl": "https://example.com/firsat/1013?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "güzellik",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "1800 ₺",
+     "dealPriceWithSymbol": "990 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1014",
    "title": "ÖRNEK VERİ — Çocuklar için bilim atölyesi",
-   "merchant": "Örnek Akademi",
-   "category": "Etkinlik",
-   "city": "Ankara",
-   "district": "Yenimahalle",
-   "oldPrice": 800,
-   "price": 560,
-   "startDate": "2026-10-08",
-   "endDate": "2026-12-05",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Çocuklar için bilim atölyesi için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1014?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": []
+   "detail": "",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-05 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Akademi",
+     "address": "Örnek Mah. Örnek Cad. No:1 Yenimahalle / Ankara"
+    }
+   ],
+   "city": "Ankara",
+   "town": "Yenimahalle",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "800 ₺",
+   "dealPriceWithSymbol": "560 ₺",
+   "showDealUrl": "https://example.com/firsat/1014?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "etkinlik",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "800 ₺",
+     "dealPriceWithSymbol": "560 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1001-dup",
    "title": "ÖRNEK VERİ — Boğaz manzaralı serpme kahvaltı (2 kişilik)",
-   "merchant": "Örnek Kahvaltı Evi",
-   "category": "Yeme İçme",
-   "city": "İstanbul",
-   "district": "Beşiktaş",
-   "oldPrice": 1200,
-   "price": 780,
-   "startDate": "2026-10-01",
-   "endDate": "2026-12-31",
    "description": "<p>Bu bir <strong>geliştirme örneğidir</strong>; gerçek bir fırsat değildir. Boğaz manzaralı serpme kahvaltı (2 kişilik) için örnek açıklama metni.</p>",
-   "url": "https://example.com/firsat/1001?ref=PUBLISHER_TEST",
-   "image": null,
-   "terms": [
-    "Hafta içi geçerlidir.",
-    "Rezervasyon zorunludur."
-   ]
+   "detail": "Hafta içi geçerlidir.\r\nRezervasyon zorunludur.",
+   "howToUse": "",
+   "endDate": true,
+   "discountPercent": "0",
+   "couponEndDate": "2026-12-31 23:59:59",
+   "country": "Turkey",
+   "businessData": [
+    {
+     "id": "1",
+     "title": "Örnek Kahvaltı Evi",
+     "address": "Örnek Mah. Örnek Cad. No:1 Beşiktaş / İstanbul"
+    }
+   ],
+   "city": "İstanbul",
+   "town": "Beşiktaş",
+   "provider": "Fırsat Bu Fırsat",
+   "realPriceWithSymbol": "1200 ₺",
+   "dealPriceWithSymbol": "780 ₺",
+   "showDealUrl": "https://example.com/firsat/1001?pid=PUBLISHER_TEST",
+   "buyDealUrl": "",
+   "image200_H": "",
+   "image450_H": "",
+   "image1200x1200": "",
+   "tags": "yeme i̇çme",
+   "subDeals": [
+    {
+     "id": "1",
+     "title": "Örnek seçenek",
+     "realPriceWithSymbol": "1200 ₺",
+     "dealPriceWithSymbol": "780 ₺"
+    }
+   ],
+   "dealImages": []
   },
   {
    "id": "1099",
    "title": "ÖRNEK VERİ — Bağlantısı olmayan kayıt",
-   "price": 10
+   "dealPriceWithSymbol": "10 ₺"
   }
  ]
 }

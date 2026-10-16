@@ -29,6 +29,12 @@ export const attributionSchema = z.object({
   url: httpsUrl.nullable(),
 });
 
+export const dealOptionSchema = z.object({
+  title: z.string().min(1).max(200),
+  price: z.number().nonnegative().nullable(),
+  originalPrice: z.number().positive().nullable(),
+});
+
 export const dealSchema = z
   .object({
     id: z.string().min(3),
@@ -42,6 +48,8 @@ export const dealSchema = z
     category: z.string(),
     sourceCategory: z.string().nullable(),
     merchant: z.string().nullable(),
+    /** Venue / merchant address as supplied by the provider. */
+    address: z.string().nullable(),
     city: z.string().nullable(),
     citySlug: z.string().nullable(),
     district: z.string().nullable(),
@@ -51,6 +59,8 @@ export const dealSchema = z
     discountPercent: z.number().int().min(1).max(99).nullable(),
     discountSource: z.enum(['provider', 'calculated']).nullable(),
     imageUrl: httpsUrl.nullable(),
+    /** Larger image for the detail page (falls back to imageUrl). */
+    imageLargeUrl: httpsUrl.nullable(),
     sourceUrl: httpsUrl,
     affiliateUrl: httpsUrl.nullable(),
     trackingStatus: trackingStatusSchema,
@@ -65,6 +75,8 @@ export const dealSchema = z
     /** Provider-supplied "new" signal only. */
     isNew: z.boolean(),
     conditions: z.array(z.string()),
+    /** Purchasable options/packages with their own prices, exactly as supplied. */
+    options: z.array(dealOptionSchema),
     tags: z.array(z.string()),
     /** Whether the detail page may be indexed (see `indexability` in normalize.ts). */
     indexable: z.boolean(),
@@ -83,6 +95,7 @@ export const dealSchema = z
   });
 
 export type Deal = z.infer<typeof dealSchema>;
+export type DealOption = z.infer<typeof dealOptionSchema>;
 export type TrackingStatus = z.infer<typeof trackingStatusSchema>;
 export type Attribution = z.infer<typeof attributionSchema>;
 

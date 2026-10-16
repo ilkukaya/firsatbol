@@ -1,0 +1,23 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CategoryView from '../../../../../components/CategoryView.astro';
+import { getCategory } from '../../../../../config/categories';
+import { getDeals } from '../../../../../lib/deals/repository';
+import { categoryCityCombos, dealsForCategory, pageCount } from '../../../../../lib/deals/pages';
+
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return categoryCityCombos(deals).flatMap((combo) => {
+    const pages = pageCount(combo.count);
+    return Array.from({ length: pages - 1 }, (_, index) => ({
+      params: { slug: combo.category, city: combo.city, page: String(index + 2) },
+      props: { category: getCategory(combo.category)!, city: { slug: combo.city, name: combo.cityName } },
+    }));
+  });
+}) satisfies GetStaticPaths;
+
+const { category, city } = Astro.props;
+const { deals } = await getDeals();
+---
+
+<CategoryView category={category} city={city} deals={dealsForCategory(deals, category.slug, city.slug)} page={Number(Astro.params.page)} />

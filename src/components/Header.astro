@@ -6,7 +6,10 @@ import { getDeals } from '../lib/deals/repository';
 import { citiesWithDeals } from '../lib/deals/taxonomy';
 
 const { deals } = await getDeals();
-const cities = citiesWithDeals(deals).sort((a, b) => Number(b.featured) - Number(a.featured) || b.count - a.count);
+const allCities = citiesWithDeals(deals);
+// keep the header light: the busiest cities (featured ones first while data is thin) + a link to all cities
+const cities = [...allCities].sort((a, b) => b.count - a.count || Number(b.featured) - Number(a.featured)).slice(0, 16);
+const moreCities = allCities.length > cities.length;
 const path = Astro.url.pathname;
 const query = Astro.url.searchParams.get('q') ?? '';
 const isActive = (href: string) => path.startsWith(href);
@@ -58,6 +61,11 @@ const isActive = (href: string) => path.startsWith(href);
                 </li>
               ))}
             </ul>
+            {moreCities && (
+              <a href="/sehirler/" class="mt-1 block rounded-lg px-3 py-2 text-sm font-bold text-brand-text hover:bg-canvas">
+                Tüm şehirler →
+              </a>
+            )}
           </div>
         </details>
         <a href="/firsatlar/" class="btn-cta hidden px-4 py-2 text-sm lg:inline-flex">
@@ -151,6 +159,11 @@ const isActive = (href: string) => path.startsWith(href);
         <li>
           <a class="block rounded-lg py-2" href="/firsatlar/">
             Tüm fırsatlar
+          </a>
+        </li>
+        <li>
+          <a class="block rounded-lg py-2" href="/sehirler/">
+            Tüm şehirler
           </a>
         </li>
         <li>

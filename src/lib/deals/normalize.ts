@@ -10,6 +10,7 @@ export interface RawDealInput {
   description?: unknown;
   summary?: unknown;
   merchant?: unknown;
+  address?: unknown;
   category?: unknown;
   city?: unknown;
   district?: unknown;
@@ -18,11 +19,13 @@ export interface RawDealInput {
   discountPercent?: unknown;
   currency?: unknown;
   imageUrl?: unknown;
+  imageLargeUrl?: unknown;
   sourceUrl?: unknown;
   affiliateUrl?: unknown;
   validFrom?: unknown;
   validUntil?: unknown;
   conditions?: unknown;
+  options?: unknown;
   tags?: unknown;
   featured?: unknown;
   popular?: unknown;
@@ -202,6 +205,49 @@ export function parseStringList(value: unknown): string[] {
     .filter((item) => item.length > 1);
 }
 
+/** Tags/keywords: arrays, or strings separated by commas, semicolons, pipes or new lines. */
+export function parseTags(value: unknown): string[] {
+  const items = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/[,;|\n]/) : [];
+  const seen = new Set<string>();
+  const tags: string[] = [];
+  for (const item of items) {
+    const tag = toSingleLine(item, 60);
+    if (!tag || tag.length < 2) continue;
+    const key = tag.toLocaleLowerCase('tr-TR');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    tags.push(tag);
+  }
+  return tags;
+}
+
+const OPTION_TITLE_KEYS = ['title', 'name', 'baslik'];
+const OPTION_PRICE_KEYS = ['dealPriceWithSymbol', 'dealPrice', 'discountedPrice', 'salePrice', 'price'];
+const OPTION_ORIGINAL_KEYS = ['realPriceWithSymbol', 'realPrice', 'originalPrice', 'oldPrice', 'listPrice'];
+
+function pick(record: Record<string, unknown>, keys: readonly string[]): unknown {
+  for (const key of keys) if (record[key] !== undefined && record[key] !== null && record[key] !== '') return record[key];
+  return undefined;
+}
+
+/** Purchasable sub-options (e.g. "Yetişkin bileti", "45 dk masaj"). Prices are never invented. */
+export function parseOptions(value: unknown): { title: string; price: number | null; originalPrice: number | null }[] {
+  if (!Array.isArray(value)) return [];
+  const options: { title: string; price: number | null; originalPrice: number | null }[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    const title = toSingleLine(pick(record, OPTION_TITLE_KEYS), 200);
+    if (!title) continue;
+    const parsed = parsePrice(pick(record, OPTION_PRICE_KEYS));
+    const price = parsed === 0 ? null : parsed;
+    let originalPrice = parsePrice(pick(record, OPTION_ORIGINAL_KEYS));
+    if (originalPrice !== null && (originalPrice <= 0 || price === null || originalPrice <= price)) originalPrice = null;
+    options.push({ title, price, originalPrice });
+  }
+  return options.slice(0, 30);
+}
+
 /** Accept only absolute http(s) URLs; upgrade protocol-relative URLs. */
 export function parseUrl(value: unknown, redact: readonly string[] = []): string | null {
   if (typeof value !== 'string') return null;
@@ -256,12 +302,21 @@ export function resolveDiscount(
 
 const CATEGORY_KEYWORDS = CATEGORIES.map((category) => ({
   slug: category.slug,
-  keywords: category.keywords.map((keyword) => ` ${keyword} `),
+  keywords: category.keywords.map((keyword) => searchFold(keyword)),
 }));
 
 /**
- * Map a provider category (and, as a fallback, the title) to a FırsatBol category slug.
- * The provider's own category text is weighted much more than the title.
+ * Keywords of 4+ letters match at the start of a word, so Turkish suffixes still match
+ * ("otel" → "otelleri", "kahvalti" → "kahvaltisi"); shorter ones must match a whole word
+ * ("spa" must not match "spagetti", "ev" must not match "evcil").
+ */
+function keywordHits(folded: string, keyword: string): boolean {
+  return keyword.length >= 4 ? folded.includes(` ${keyword}`) : folded.includes(` ${keyword} `);
+}
+
+/**
+ * Map a provider category (and, as a fallback, tags and the title) to a FırsatBol category slug.
+ * The provider's own category text weighs most, then tags, then the title.
  */
 export function mapCategory(sourceCategory: string | null, title: string, tags: readonly string[] = []): string {
   const score = new Map<string, number>();
@@ -269,7 +324,7 @@ export function mapCategory(sourceCategory: string | null, title: string, tags: 
     const folded = ` ${searchFold(text)} `;
     for (const { slug, keywords } of CATEGORY_KEYWORDS) {
       for (const keyword of keywords) {
-        if (folded.includes(keyword)) score.set(slug, (score.get(slug) ?? 0) + weight);
+        if (keywordHits(folded, keyword)) score.set(slug, (score.get(slug) ?? 0) + weight);
       }
     }
   };
@@ -333,7 +388,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
   const description = toPlainText(raw.description);
   const summary = toPlainText(raw.summary);
   const sourceCategory = toSingleLine(raw.category, 120);
-  const tags = parseStringList(raw.tags).slice(0, 12);
+  const tags = parseTags(raw.tags).slice(0, 12);
   const city = normalizeCity(toSingleLine(raw.city, 80));
   const district = toSingleLine(raw.district, 80);
 
@@ -365,6 +420,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     category: mapCategory(sourceCategory, title, tags),
     sourceCategory,
     merchant: toSingleLine(raw.merchant, 120),
+    address: toSingleLine(raw.address, 300),
     city: city?.name ?? null,
     citySlug: city?.slug ?? null,
     district,
@@ -374,6 +430,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     discountPercent: discount.percent,
     discountSource: discount.source,
     imageUrl: parseUrl(raw.imageUrl, ctx.redact),
+    imageLargeUrl: parseUrl(raw.imageLargeUrl, ctx.redact),
     sourceUrl: sourceUrl ?? outbound,
     affiliateUrl,
     trackingStatus: affiliateUrl ? ctx.trackingStatus : 'none',
@@ -386,6 +443,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     popular: parseBoolean(raw.popular),
     isNew: parseBoolean(raw.isNew),
     conditions: parseStringList(raw.conditions).slice(0, 20),
+    options: parseOptions(raw.options),
     tags,
     indexable: computeIndexable(summary, description, ctx.indexProviderPages),
   };

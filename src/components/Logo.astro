@@ -13,8 +13,6 @@ const text = size === 'lg' ? 'text-[1.7rem]' : size === 'sm' ? 'text-xl' : 'text
 
 <span class:list={['inline-flex items-center gap-2.5', className]}>
   <LogoMark size={mark} />
-  <span class:list={['font-display font-extrabold leading-none tracking-[-0.03em]', text]}>
-    <span class={inverted ? 'text-white' : 'text-ink'}>Fırsat</span>
-    <span class={inverted ? 'text-brand' : 'text-brand-text'}>Bol</span>
-  </span>
+  <!-- prettier-ignore -->
+  <span class:list={['font-display font-extrabold leading-none tracking-[-0.03em]', text]}><span class={inverted ? 'text-white' : 'text-ink'}>Fırsat</span><span class={inverted ? 'text-brand' : 'text-brand-text'}>Bol</span></span>
 </span>

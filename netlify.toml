@@ -37,13 +37,19 @@
   force = true
 
 [[redirects]]
+  from = "/kategori/:slug/:city/sayfa/1/"
+  to = "/kategori/:slug/:city/"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/kategori/"
   to = "/firsatlar/"
   status = 301
 
 [[redirects]]
   from = "/sehir/"
-  to = "/firsatlar/"
+  to = "/sehirler/"
   status = 301
 
 [[redirects]]

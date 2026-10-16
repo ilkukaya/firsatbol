@@ -15,7 +15,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
   if (fixtureMode) return [];
   const day = generatedAt.slice(0, 10);
   const entries: SitemapEntry[] = [{ path: '/', lastmod: day }];
-  if (deals.length > 0) entries.push({ path: '/firsatlar/', lastmod: day });
+  if (deals.length > 0) entries.push({ path: '/firsatlar/', lastmod: day }, { path: '/sehirler/', lastmod: day });
 
   const counts = categoryCounts(deals);
   for (const category of CATEGORIES)

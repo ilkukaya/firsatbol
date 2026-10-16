@@ -42,7 +42,7 @@ function renderCard(entry: DealIndexEntry, categoryNames: Record<string, string>
       : '';
   const meta = [
     location ? `<li class="flex min-w-0 items-center gap-1">${icon('pin')}<span class="truncate">${escapeHtml(location)}</span></li>` : '',
-    entry.vu ? `<li class="flex items-center gap-1">${icon('clock')}Son gün ${dateFormat.format(new Date(entry.vu))}</li>` : '',
+    entry.vu ? `<li class="flex items-center gap-1">${icon('clock')}Son kullanım ${dateFormat.format(new Date(entry.vu))}</li>` : '',
   ].join('');
   const showOriginal = entry.op !== null && entry.p !== null && entry.op > entry.p;
   const price =

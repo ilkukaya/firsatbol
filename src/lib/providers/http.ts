@@ -32,17 +32,35 @@ export class ProviderHttpError extends Error {
   }
 }
 
-const lastRequestAt = new Map<string, number>();
+/** Next free request slot per host: requests START at least minIntervalMs apart, even when concurrent. */
+const nextSlot = new Map<string, number>();
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function respectInterval(host: string, minIntervalMs: number): Promise<void> {
-  const last = lastRequestAt.get(host);
-  if (last !== undefined) {
-    const wait = last + minIntervalMs - Date.now();
-    if (wait > 0) await sleep(wait);
-  }
-  lastRequestAt.set(host, Date.now());
+  const now = Date.now();
+  const slot = Math.max(now, nextSlot.get(host) ?? 0);
+  nextSlot.set(host, slot + minIntervalMs);
+  if (slot > now) await sleep(slot - now);
+}
+
+/** Run async tasks with a fixed concurrency limit, preserving result order. */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await task(items[index]!, index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
 }
 
 function retryAfterMs(response: Response): number | null {

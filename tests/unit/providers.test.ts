@@ -1,11 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  FBF_ATTRIBUTION_TEXT,
+  FBF_FIELD_MAP,
   buildRequestUrl,
   createFirsatBuFirsatAdapter,
   readFbfConfig,
+  sweepPlan,
   transformResponse,
-  FBF_ATTRIBUTION_TEXT,
 } from '../../src/lib/providers/firsatbufirsat';
 import { detectFormat, extractRecords, parseBody } from '../../src/lib/providers/parse';
 import { mapRecord, parseFieldMap } from '../../src/lib/providers/fields';
@@ -54,35 +56,75 @@ describe('field mapping', () => {
   });
 });
 
-describe('transformResponse (JSON fixture)', () => {
-  const body = readFileSync('fixtures/firsatbufirsat/sample.json', 'utf8');
-  const result = transformResponse(body, 'application/json', baseConfig, now);
-  it('accepts valid deals and rejects invalid/expired', () => {
+describe('transformResponse (real Fırsat Bu Fırsat response)', () => {
+  const body = readFileSync('fixtures/firsatbufirsat/real-sample.json', 'utf8');
+  const config = { ...baseConfig, fieldMap: FBF_FIELD_MAP };
+  const result = transformResponse(body, 'application/json; charset=utf-8', config, now);
+  const [zoo, spa, aquarium, nationwide] = result.deals;
+  it('reads total, ids and the nationwide tail', () => {
     expect(result.format).toBe('json');
+    expect(result.total).toBe(4);
+    expect(result.recordIds).toEqual(['1148548', '984426', '632767', '9000001']);
+    expect(result.nationwide).toBe(1);
+    expect(result.nationwideTrailing).toBe(1);
+    expect(result.deals).toHaveLength(4);
+  });
+  it('maps verified fields', () => {
+    expect(zoo).toMatchObject({
+      externalId: '1148548',
+      merchant: 'Park Of İstanbul',
+      city: 'İstanbul',
+      district: 'Çekmeköy',
+      originalPrice: 750,
+      price: 429,
+      discountPercent: 43,
+      discountSource: 'provider',
+      category: 'etkinlik',
+      trackingStatus: 'unverified',
+      validUntil: '2026-12-30T20:59:59.000Z',
+    });
+    expect(zoo!.affiliateUrl).toBe(
+      'https://www.firsatbufirsat.com/firsat/park-of-istanbul-hayvanat-bahcesi-giris-bileti?pid=PUBLISHER_TEST',
+    );
+    expect(zoo!.imageUrl).toContain('/400x400/');
+    expect(zoo!.imageLargeUrl).toContain('/1200x1200/');
+    expect(zoo!.address).toContain('Çekmeköy');
+    expect(zoo!.tags).toContain('hayvanat bahçesi');
+    expect(zoo!.conditions.length).toBeGreaterThan(2);
+    expect(zoo!.options[0]).toEqual({ title: expect.stringContaining('Çocuk'), price: 399, originalPrice: 550 });
+  });
+  it('never shows a discount when both prices are equal', () => {
+    expect(spa).toMatchObject({ price: 2000, originalPrice: null, discountPercent: null, category: 'guzellik-bakim', validUntil: null });
+    expect(spa!.options.every((option) => option.originalPrice === null)).toBe(true);
+  });
+  it('handles nationwide deals without a city', () => {
+    expect(aquarium!.category).toBe('etkinlik');
+    expect(nationwide).toMatchObject({ city: null, citySlug: null, district: null });
+  });
+  it('requires the provider attribution', () => {
+    expect(zoo!.attribution).toMatchObject({ required: true, text: FBF_ATTRIBUTION_TEXT });
+  });
+  it('rejects provider error envelopes', () => {
+    expect(() =>
+      transformResponse('{"result":"ERROR","resultMessage":"Invalid apiKey","deals":[]}', 'application/json', config, now),
+    ).toThrow(/Invalid apiKey/);
+  });
+});
+
+describe('transformResponse (synthetic dev fixture)', () => {
+  const body = readFileSync('fixtures/firsatbufirsat/sample.json', 'utf8');
+  const result = transformResponse(body, 'application/json', { ...baseConfig, fieldMap: FBF_FIELD_MAP }, now);
+  it('accepts valid deals and rejects invalid/expired', () => {
     expect(result.received).toBe(16);
     expect(result.expired).toBe(1);
     expect(result.rejectReasons['missing-url']).toBe(1);
-    expect(result.deals.length).toBe(14); // incl. one duplicate removed later by dedupeDeals
+    expect(result.deals.length).toBe(14);
   });
-  it('attaches required attribution and detects publisher-tracked links', () => {
-    const deal = result.deals[0]!;
-    expect(deal.attribution).toMatchObject({ required: true, text: FBF_ATTRIBUTION_TEXT });
-    expect(deal.affiliateUrl).toContain('PUBLISHER_TEST');
-    expect(deal.trackingStatus).toBe('unverified');
-    expect(deal.category).toBe('yeme-icme');
-    expect(deal.citySlug).toBe('istanbul');
-    expect(deal.discountPercent).toBe(35);
-  });
-  it('keeps unknown prices null', () => {
-    const noPrice = result.deals.find((deal) => deal.externalId === '1011')!;
-    expect(noPrice.price).toBeNull();
-    expect(noPrice.discountPercent).toBeNull();
-  });
-  it('parses Turkish formatted prices', () => {
+  it('parses Turkish formatted prices and keeps unknown prices null', () => {
     const tech = result.deals.find((deal) => deal.externalId === '1006')!;
-    expect(tech.price).toBe(1299.9);
-    expect(tech.originalPrice).toBe(1899.9);
-    expect(tech.category).toBe('teknoloji');
+    expect(tech).toMatchObject({ price: 1299.9, originalPrice: 1899.9, category: 'teknoloji' });
+    const noPrice = result.deals.find((deal) => deal.externalId === '1011')!;
+    expect(noPrice).toMatchObject({ price: null, discountPercent: null });
   });
 });
 
@@ -138,24 +180,59 @@ describe('request building & secrets', () => {
     expect(result.diagnostics.requests).toBe(1);
     expect(JSON.stringify(result.diagnostics)).not.toContain('K3Y-SECRET');
   });
-  it('paginates until an empty page', async () => {
+  it('sweeps provinces: locals first, nationwide tail collected once, repeated pages stop', async () => {
     vi.stubEnv('FIRSATBUFIRSAT_API_KEY', 'K');
     vi.stubEnv('FIRSATBUFIRSAT_PUBLISHER_ID', 'P');
-    vi.stubEnv('FIRSATBUFIRSAT_PAGE_PARAM', 'page');
-    vi.stubEnv('FIRSATBUFIRSAT_MAX_PAGES', '5');
+    vi.stubEnv('FIRSATBUFIRSAT_CITY_IDS', '1,2,3');
     vi.stubEnv('FIRSATBUFIRSAT_MIN_INTERVAL_MS', '0');
-    const pages: Record<string, unknown> = {
-      '1': { deals: [{ id: 1, title: 'Bir', url: 'https://a.com/1' }] },
-      '2': { deals: [{ id: 2, title: 'İki', url: 'https://a.com/2' }] },
-      '3': { deals: [] },
+    const deal = (id: string, city: string) => ({
+      id,
+      title: `Fırsat ${id}`,
+      city,
+      showDealUrl: `https://www.firsatbufirsat.com/firsat/${id}?pid=P`,
+      dealPriceWithSymbol: '100 ₺',
+    });
+    const nationwide = Array.from({ length: 12 }, (_, i) => deal(`n${i}`, ''));
+    const locals: Record<string, ReturnType<typeof deal>[]> = {
+      '1': Array.from({ length: 4 }, (_, i) => deal(`a${i}`, 'Adana')),
+      '2': [],
+      '3': [
+        ...Array.from({ length: 6 }, (_, i) => deal(`i${i}`, 'İstanbul')),
+        deal('mixed', ''),
+        ...Array.from({ length: 8 }, (_, i) => deal(`j${i}`, 'İstanbul')),
+      ],
     };
-    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      const page = new URL(String(input)).searchParams.get('page') ?? '1';
-      return new Response(JSON.stringify(pages[page] ?? { deals: [] }), { headers: { 'content-type': 'application/json' } });
+    const calls: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      const city = url.searchParams.get('cityId')!;
+      const page = Number(url.searchParams.get('p'));
+      calls.push(`${city}:${page}`);
+      const all = [...locals[city]!, ...nationwide];
+      const lastPage = Math.ceil(all.length / 10);
+      const slice = all.slice((Math.min(page, lastPage) - 1) * 10, Math.min(page, lastPage) * 10); // API repeats its last page
+      return new Response(JSON.stringify({ result: 'SUCCESS', total: all.length, deals: slice }), {
+        headers: { 'content-type': 'application/json' },
+      });
     });
     const result = await createFirsatBuFirsatAdapter(readFbfConfig()).fetchDeals({ now });
-    expect(result.deals.map((d) => d.externalId)).toEqual(['1', '2']);
-    expect(spy).toHaveBeenCalledTimes(3);
+    const ids = result.deals.map((d) => d.externalId);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter((id) => id.startsWith('n'))).toHaveLength(12); // nationwide collected once, fully
+    expect(ids).toEqual(expect.arrayContaining(['a0', 'a3', 'i0', 'mixed', 'j7']));
+    // city 1 paged to the end (short 2nd page ends it), city 2: one page of pure tail, city 3: continues past a mixed-in nationwide deal
+    expect(calls.filter((c) => c.startsWith('1:'))).toEqual(['1:1', '1:2']);
+    expect(calls.filter((c) => c.startsWith('2:'))).toEqual(['2:1']);
+    expect(calls.filter((c) => c.startsWith('3:')).length).toBeGreaterThanOrEqual(2);
+    expect(result.diagnostics.ok).toBe(true);
+  });
+  it('plans one unfiltered query when the sweep is off', () => {
+    expect(sweepPlan({ cityIds: null, extraQueries: [], popularQuery: undefined, newQuery: undefined })).toEqual([
+      { query: undefined, scoped: false },
+    ]);
+    expect(
+      sweepPlan({ cityIds: [7], extraQueries: ['cityId=41&townId=9'], popularQuery: undefined, newQuery: undefined }).map((q) => q.query),
+    ).toEqual(['cityId=7', 'cityId=41&townId=9']);
   });
 });
 

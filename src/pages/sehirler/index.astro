@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import { getDeals } from '../../lib/deals/repository';
+import { citiesWithDeals } from '../../lib/deals/taxonomy';
+import { breadcrumbJsonLd } from '../../lib/seo';
+
+const { deals } = await getDeals();
+const cities = citiesWithDeals(deals).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+const nationwide = deals.filter((deal) => deal.citySlug === null).length;
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Şehirler', path: '/sehirler/' },
+];
+---
+
+<BaseLayout
+  title="Şehirlere Göre Fırsatlar"
+  description="Türkiye’nin illerine göre güncel fırsatlar: şehrinizi seçin; yeme içme, spa, etkinlik ve konaklama kampanyalarını konuma göre inceleyin."
+  noindex={deals.length === 0}
+  jsonLd={[breadcrumbJsonLd(crumbs)]}
+>
+  <div class="container-page py-8 sm:py-12">
+    <Breadcrumbs crumbs={crumbs} />
+    <div class="mb-8 mt-5 max-w-3xl">
+      <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem]">Şehirlere göre fırsatlar</h1>
+      <p class="mt-3 text-[1.05rem] leading-relaxed text-ink-2">
+        Fırsatlar, iş ortaklarımızın belirttiği il ve ilçe bilgisine göre listelenir.
+        {nationwide > 0 &&
+          ` Ayrıca ${nationwide.toLocaleString('tr-TR')} fırsat belirli bir şehre bağlı değildir (kargolu ürünler, online hizmetler).`}
+      </p>
+    </div>
+    <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {cities.map((city) => (
+        <li>
+          <a href={`/sehir/${city.slug}/`} class="card flex items-center justify-between gap-3 px-4 py-3 hover:shadow-[var(--shadow-lift)]">
+            <span class="flex items-center gap-2 font-semibold">
+              <Icon name="pin" size={17} class="text-brand-text" />
+              {city.name}
+            </span>
+            <span class="text-sm font-semibold text-muted">{city.count > 0 ? city.count : '—'}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+</BaseLayout>

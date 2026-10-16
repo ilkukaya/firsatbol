@@ -1,9 +1,9 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import CategoryView from '../../../components/CategoryView.astro';
-import { getCategory } from '../../../config/categories';
-import { getDeals } from '../../../lib/deals/repository';
-import { categoryCityCombos, dealsForCategory } from '../../../lib/deals/pages';
+import CategoryView from '../../../../components/CategoryView.astro';
+import { getCategory } from '../../../../config/categories';
+import { getDeals } from '../../../../lib/deals/repository';
+import { categoryCityCombos, dealsForCategory } from '../../../../lib/deals/pages';
 
 /** Only combinations with at least MIN_COMBO_PAGE genuine deals get a page. */
 export const getStaticPaths = (async () => {
