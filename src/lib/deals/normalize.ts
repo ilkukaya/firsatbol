@@ -463,6 +463,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     sessions: [],
     priceFrom: false,
     tags,
+    topics: [],
     indexable: computeIndexable(summary, description, ctx.indexProviderPages),
   };
 

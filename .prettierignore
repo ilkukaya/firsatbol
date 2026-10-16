@@ -5,3 +5,5 @@ fixtures
 src/content
 package-lock.json
 dist-empty
+# partner snippets are published verbatim
+src/config/attribution/*.html

@@ -54,10 +54,10 @@ Copy `.env.example` to `.env` for local work. **Never commit `.env`.**
 
 ```
 src/
-  config/            site.ts (env-driven owner/analytics config), categories.ts, cities.ts, attribution/
+  config/            site.ts (env-driven owner/analytics config), categories.ts, cities.ts, taxonomy.ts (partner category tree + tagIds), attribution/
   content/           guides/ (rehberler), pages/ (legal & info), deals/ (editorial deals), deal-notes/ (overlays)
   lib/
-    deals/           schema (Zod), normalize, repository (build-time), query (shared filters), taxonomy, fingerprint
+    deals/           schema (Zod), normalize, repository (build-time), query (shared filters), taxonomy, facets, topics, fingerprint
     providers/       types, http (timeout/retry/backoff/rate-limit), parse, fields, firsatbufirsat/, feed/, registry
     analytics/       event schema + PII scrubbing + aggregation
   components/        DealCard, DealListing, AttributionNotice, Header, Footer, NewsletterForm, …

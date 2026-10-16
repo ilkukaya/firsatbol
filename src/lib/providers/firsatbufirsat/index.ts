@@ -1,6 +1,7 @@
 import { readBool, readEnv, readInt } from '../../env';
 import { normalizeDeal, type NormalizeContext } from '../../deals/normalize';
 import type { Deal } from '../../deals/schema';
+import { TOPICS } from '../../../config/taxonomy';
 import { mergeEventSessions, parseEventsResponse, type EventSessionRecord } from './events';
 import { mapRecord, parseFieldMap, readPath, type FieldMap } from '../fields';
 import { DEFAULT_POLICY, ProviderHttpError, fetchText, mapWithConcurrency, redactUrl, type FetchPolicy } from '../http';
@@ -21,6 +22,9 @@ import { emptyDiagnostics, type ProviderAdapter, type ProviderDiagnostics, type 
  *  - `showDealUrl` carries our publisher id as `pid` (publisher tracking).
  *  - Events: `/deal/event-deals.html` → `{ events: [...] }`, one record per session
  *    (see ./events.ts); sessions are merged into the matching deal.
+ *  - `tagIds[]=<id>` = partner category filter (sub-categories included). One nationwide query per
+ *    node of `src/config/taxonomy.ts` gives each deal its category-tree memberships; city and
+ *    district pages are then derived from the deal's own location.
  */
 export const FBF_ATTRIBUTION_TEXT = 'Fırsat bilgileri Fırsat Bu Fırsat tarafından sağlanmaktadır.';
 export const FBF_HOME_URL = 'https://www.firsatbufirsat.com/';
@@ -74,6 +78,8 @@ export interface FbfConfig {
   cityMode: 'auto' | 'always' | 'off';
   /** Etkinlik API endpoint ('' disables session merging). */
   eventsEndpoint: string;
+  /** Category-tree nodes whose `tagIds[]` membership is fetched (empty = off). */
+  topics: { slug: string; tagId: number }[];
   /** Additional queries swept like cities, e.g. "cityId=41&townId=123" for big districts. */
   extraQueries: string[];
   concurrency: number;
@@ -119,6 +125,9 @@ export function readFbfConfig(): FbfConfig {
     cityIds: cities.ids,
     cityMode: cities.mode,
     eventsEndpoint: eventsSetting === 'off' ? '' : (eventsSetting ?? FBF_EVENTS_ENDPOINT),
+    topics: readBool('FIRSATBUFIRSAT_TOPICS', true)
+      ? [...TOPICS.values()].flatMap((topic) => (topic.tagId === undefined ? [] : [{ slug: topic.slug, tagId: topic.tagId }]))
+      : [],
     extraQueries: (readEnv('FIRSATBUFIRSAT_QUERIES') ?? '')
       .split(/[\n|]+/)
       .map((query) => query.trim().replace(/^\?/, ''))
@@ -281,6 +290,24 @@ export function transformResponse(
   };
 }
 
+/** Record ids (and the reported total) of one page — used for category membership queries. */
+export function parseIdPage(body: string, contentType: string, idPath: string): { ids: string[]; total: number | null } {
+  const format = detectFormat(contentType, body);
+  if (format !== 'json' && format !== 'xml') throw new Error(`Tanınmayan yanıt biçimi (${format}).`);
+  const tree = parseBody(format, body);
+  if (tree && typeof tree === 'object' && 'result' in tree) {
+    const result = String((tree as { result: unknown }).result).toUpperCase();
+    if (result !== 'SUCCESS') throw new Error(`Sağlayıcı hata döndürdü: ${result}`);
+  }
+  const totalRaw = readPath(tree, 'total');
+  const total = typeof totalRaw === 'number' ? totalRaw : typeof totalRaw === 'string' && /^\d+$/.test(totalRaw) ? Number(totalRaw) : null;
+  const ids = extractRecords(tree)
+    .records.map((record) => readPath(record, idPath))
+    .filter((id): id is string | number => (typeof id === 'string' && id.trim() !== '') || typeof id === 'number')
+    .map((id) => String(id).trim());
+  return { ids, total };
+}
+
 export interface SweepQuery {
   query: string | undefined;
   /** City/district-scoped queries end with the nationwide tail; stop there once it was collected. */
@@ -412,6 +439,30 @@ export function createFirsatBuFirsatAdapter(config: FbfConfig = readFbfConfig())
         return { records, sessions: seen.size };
       };
 
+      /** Ids of every deal carrying one partner category (paged like the catalog). */
+      const fetchTopicIds = async (tagId: number) => {
+        const ids = new Set<string>();
+        let pageSize = 0;
+        for (let index = 0; index < config.maxPages; index += 1) {
+          const url = buildRequestUrl(config, `tagIds[]=${tagId}`, config.pageStart + index);
+          let page;
+          try {
+            const response = await fetchText(url, redactUrl(url, secrets), config.policy);
+            diagnostics.requests += response.attempts;
+            page = parseIdPage(response.body, response.contentType, config.fieldMap.externalId ?? 'id');
+          } catch (error) {
+            if (error instanceof ProviderHttpError) diagnostics.requests += error.attempts;
+            throw error;
+          }
+          const fresh = page.ids.filter((id) => !ids.has(id));
+          if (fresh.length === 0) break;
+          fresh.forEach((id) => ids.add(id));
+          pageSize = Math.max(pageSize, page.ids.length);
+          if (page.ids.length < pageSize || (page.total !== null && ids.size >= page.total)) break;
+        }
+        return ids;
+      };
+
       try {
         // 1) whole catalog in one unfiltered, paginated query (100 per page)
         const catalog = { query: undefined, scoped: false } satisfies SweepQuery;
@@ -441,6 +492,30 @@ export function createFirsatBuFirsatAdapter(config: FbfConfig = readFbfConfig())
           for (const deal of merged.deals) byId.set(deal.id, deal);
           diagnostics.warnings.push(
             `Etkinlik API: ${events.sessions} seans; ${merged.attached} fırsata takvim eklendi, ${merged.created} yalnızca etkinlik olan fırsat oluşturuldu.`,
+          );
+        }
+        // 4) category tree memberships (a failed node only loses its own pages; tags still match)
+        if (config.topics.length > 0) {
+          const byExternal = new Map([...byId.values()].map((deal) => [deal.externalId, deal]));
+          let failed = 0;
+          let linked = 0;
+          await mapWithConcurrency(config.topics, config.concurrency, async (topic) => {
+            let ids: Set<string>;
+            try {
+              ids = await fetchTopicIds(topic.tagId);
+            } catch {
+              failed += 1;
+              return;
+            }
+            for (const id of ids) {
+              const deal = byExternal.get(id);
+              if (!deal || deal.topics.includes(topic.slug)) continue;
+              deal.topics = [...deal.topics, topic.slug];
+              linked += 1;
+            }
+          });
+          diagnostics.warnings.push(
+            `Kategori ağacı: ${config.topics.length} kategori sorgulandı, ${linked} fırsat-kategori eşleşmesi${failed ? `, ${failed} kategori alınamadı` : ''}.`,
           );
         }
         diagnostics.ok = true;

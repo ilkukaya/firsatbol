@@ -1,6 +1,7 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import RedirectLayout from '../../layouts/RedirectLayout.astro';
+import AttributionNotice from '../../components/AttributionNotice.astro';
 import Icon from '../../components/Icon.astro';
 import Logo from '../../components/Logo.astro';
 import { getDeals } from '../../lib/deals/repository';
@@ -114,10 +115,8 @@ const seconds = 3;
         <span>Güncel fiyat, stok ve koşullar satıcı sayfasında geçerlidir.</span>
       </li>
     </ul>
-    <p class="mt-4 text-xs leading-relaxed text-muted">
-      {isAffiliate ? 'Bu bir iş ortaklığı bağlantısıdır; ödediğiniz fiyat değişmez. ' : ''}
-      {deal.attribution.required && deal.attribution.text}
-    </p>
+    {isAffiliate && <p class="mt-4 text-xs leading-relaxed text-muted">Bu bir iş ortaklığı bağlantısıdır; ödediğiniz fiyat değişmez.</p>}
+    <AttributionNotice deals={[deal]} class="mt-4 w-full" />
   </main>
 
   <script>

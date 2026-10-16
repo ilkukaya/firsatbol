@@ -2,20 +2,23 @@
 import type { GetStaticPaths } from 'astro';
 import FacetView from '../../components/FacetView.astro';
 import { getDeals } from '../../lib/deals/repository';
-import { TAG_MIN_INDEX, facetsOf, type Facet } from '../../lib/deals/facets';
+import { TOPICS } from '../../config/taxonomy';
+import { facetsOf, subFacetIndexable, topicAncestorCrumbs, topicChildLinks, type SubFacet } from '../../lib/deals/facets';
 
-/** Türkiye-wide sub-category pages, e.g. /etiket/masaj/ */
+/** Türkiye-wide sub-category pages: category-tree nodes (/etiket/masaj/, /etiket/spa/…) and provider tags. */
 export const getStaticPaths = (async () => {
   const { deals } = await getDeals();
   return facetsOf(deals).tags.map((tag) => ({ params: { tag: tag.slug }, props: { tag } }));
 }) satisfies GetStaticPaths;
 
 interface Props {
-  tag: Facet;
+  tag: SubFacet;
 }
 const { tag } = Astro.props;
 const { deals } = await getDeals();
-const { citySegments } = facetsOf(deals);
+const { citySegments, tags } = facetsOf(deals);
+const available = new Set(tags.map((t) => t.slug));
+const hrefOf = (slug: string) => `/etiket/${slug}/`;
 const cityLinks = citySegments
   .filter((page) => page.kind === 'tag' && page.slug === tag.slug)
   .sort((a, b) => b.deals.length - a.deals.length)
@@ -24,20 +27,22 @@ const cityLinks = citySegments
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
   { name: 'Tüm fırsatlar', path: '/firsatlar/' },
-  { name: tag.name, path: `/etiket/${tag.slug}/` },
+  ...topicAncestorCrumbs(tag.topic, available, hrefOf),
+  { name: tag.name, path: hrefOf(tag.slug) },
 ];
+const root = tag.topic && tag.topic.path.length > 0 ? TOPICS.get(tag.topic.path[0]!)! : null;
 ---
 
 <FacetView
   title={`${tag.name} Fırsatları ve Kampanyaları`}
   heading={`${tag.name} fırsatları`}
-  eyebrow="Alt kategori"
+  eyebrow={root ? `${root.name} · Alt kategori` : tag.topic ? 'Kategori' : 'Alt kategori'}
   description={`${tag.name} fırsatları: ${tag.deals.length} güncel kampanya. Fiyat, konum ve kullanım koşullarını karşılaştırın; satıcının sayfasına güvenle geçin.`}
   deals={tag.deals}
   crumbs={crumbs}
-  canonical={`/etiket/${tag.slug}/`}
-  noindex={tag.deals.length < TAG_MIN_INDEX}
-  links={[{ title: 'Şehirlere göre', items: cityLinks }]}
+  canonical={hrefOf(tag.slug)}
+  noindex={!subFacetIndexable(tag)}
+  links={[...(tag.topic ? [topicChildLinks(tag.topic, deals, available, hrefOf)] : []), { title: 'Şehirlere göre', items: cityLinks }]}
   searchTerm={tag.name}
   placement={`tag-${tag.slug}`}
 />

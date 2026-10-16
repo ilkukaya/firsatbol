@@ -12,7 +12,7 @@
 - [x] Open Graph + Twitter cards, 1200×630 default image, per-deal image when available
 - [x] JSON-LD: Organization (name/url/logo only), WebSite + SearchAction, BreadcrumbList, ItemList, Article (guides).
       **No** Offer/Product/Review/AggregateRating markup — we are not the seller and do not fabricate ratings.
-- [x] Breadcrumbs (visible + structured)
+- [x] Breadcrumbs (visible + structured), including category-tree ancestors (İstanbul › Masaj › Spa › Hamam)
 - [x] Internal linking: header categories, city chips, category ↔ city ↔ deal ↔ guide cross-links, related deals
 - [x] Pagination with crawlable `<a>` links (`/firsatlar/sayfa/2/`), 301 from `/sayfa/1/`
 - [x] Static HTML for all content (works without JS); JS only enhances filters/search
@@ -31,8 +31,8 @@
 | `/kategori/<slug>/` (+ `/sayfa/N/`) | category has deals |
 | `/kategori/<slug>/<city>/` | generated only with ≥ 4 deals |
 | `/sehir/<city>/` | ≥ 3 deals (8 featured cities always exist, noindex while thin) |
-| `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | generated from ≥ 3 (city×tag ≥ 4) deals, indexed from ≥ 5 |
-| `/etiket/<tag>/` | generated from ≥ 5 deals, indexed from ≥ 8 |
+| `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | generated from ≥ 3 (plain tags per city ≥ 4) deals, indexed from ≥ 5 |
+| `/etiket/<tag>/` | category-tree node: generated from ≥ 3, indexed from ≥ 5; plain tag: generated from ≥ 5, indexed from ≥ 8 |
 | `/sehirler/` | at least one deal |
 | `/git/<slug>/` (transition page) | never (noindex, nofollow, robots Disallow) |
 | `/rehber/`, `/rehber/<slug>/` | always |

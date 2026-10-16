@@ -3,10 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AttributionNotice from './AttributionNotice.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import DealGrid from './DealGrid.astro';
-import Icon from './Icon.astro';
+import LinkGroups from './LinkGroups.astro';
 import { CATEGORIES } from '../config/categories';
 import type { Deal } from '../lib/deals/schema';
-import { FACET_PAGE_LIMIT } from '../lib/deals/facets';
+import { FACET_PAGE_LIMIT, type LinkGroup } from '../lib/deals/facets';
 import { countBy } from '../lib/deals/taxonomy';
 import { breadcrumbJsonLd, itemListJsonLd, type Crumb } from '../lib/seo';
 
@@ -22,7 +22,7 @@ interface Props {
   canonical: string;
   noindex: boolean;
   /** Related facet links (districts, sub-categories…). */
-  links?: { title: string; items: { href: string; label: string; count: number }[] }[];
+  links?: LinkGroup[];
   /** Search term for "see all" when the list is truncated. */
   searchTerm?: string | undefined;
   placement: string;
@@ -78,24 +78,7 @@ const summary = [
           {summary}
         </p>
       </div>
-      {links.map(
-        (group) =>
-          group.items.length > 0 && (
-            <nav aria-label={group.title} class="mt-6">
-              <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{group.title}</p>
-              <ul class="flex flex-wrap gap-2">
-                {group.items.map((item) => (
-                  <li>
-                    <a href={item.href} class="chip">
-                      <Icon name="tag" size={14} class="text-brand-text" />
-                      {item.label} <span class="text-xs text-muted">{item.count}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ),
-      )}
+      <LinkGroups groups={links} />
     </div>
   </section>
 

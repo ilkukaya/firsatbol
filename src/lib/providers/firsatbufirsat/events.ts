@@ -162,6 +162,7 @@ export function mergeEventSessions(
       sessions,
       priceFrom: new Set(prices).size > 1,
       tags: [],
+      topics: [],
       indexable: computeIndexable(null, null, false),
     };
     if (candidate.originalPrice !== null && candidate.price !== null && candidate.originalPrice > candidate.price) {

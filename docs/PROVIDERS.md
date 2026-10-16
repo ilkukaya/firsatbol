@@ -37,7 +37,7 @@ Verified against real responses with the owner's credentials:
 | Pagination | `p=<n>`; **max 20 distinct pages per query**, later pages repeat the last one → 2 000 deals with 100/page |
 | Province filter | `cityId=<1–81>` (partner's own ids, roughly Turkish alphabetical: 1 Adana, 7 Ankara, 8 Antalya, 21 Bursa, 32 Eskişehir, 41 İstanbul, 42 İzmir, 53 Kocaeli, 59 Muğla; 82 = all) |
 | District filter | `townId=<id>` (İstanbul ids supplied by the owner, e.g. 53 Kadıköy, 132 Beşiktaş, 135 Bakırköy). Results also include nearby districts. |
-| Tag filter | `tagIds[]=<id>` (e.g. 12 masaj, 26 spa, 21 hamam, 126 sauna, 514 kese, 2045 köpük masajı) |
+| Tag filter | `tagIds[]=<id>` (e.g. 12 masaj, 26 spa, 21 hamam, 126 sauna, 514 kese, 2045 köpük masajı); includes sub-categories (masaj 128 vs. 111 tagged "masaj"); the URL-encoded form `tagIds%5B%5D` returns the same result |
 | Subset check | district/tag queries return **only deals already in the full catalog** (verified) — so district and sub-category pages are built from each deal's own `town` and `tags`; no extra requests needed |
 | Result order per province | local deals first, then the ~78 nationwide deals (empty `city`); single nationwide deals can appear mid-list |
 | Tracking | `showDealUrl`/`buyDealUrl` carry `pid=<publisherId>` |
@@ -60,7 +60,13 @@ category field), `subDeals` (options with their own prices).
    sessions are grouped by `dealId` and attached to the matching deal (category set to `etkinlik`); events without a
    deal become their own deal ("Başlangıç fiyatı" when session prices differ).
 
-Measured 2026-10-16: **39 requests, ~30 s, 1 944 deals, 550 with an event calendar, 11 event-only deals.**
+4. **Category tree** (`FIRSATBUFIRSAT_TOPICS`, default on): one nationwide `tagIds[]=<id>` query per node of
+   `src/config/taxonomy.ts` (94 nodes, ≈ 135 requests, ids only), paged the same way. Each deal gets its node memberships;
+   ancestors and nodes whose name equals one of the deal's own tags are added at build time (`src/lib/deals/topics.ts`).
+   A failed node is reported as a warning and only loses its own pages.
+
+Measured 2026-10-16: **175 requests, ~80 s, 1 943 deals, 550 with an event calendar, 11 event-only deals,
+6 340 deal–category memberships.**
 
 ### Activation steps
 
@@ -72,12 +78,27 @@ Measured 2026-10-16: **39 requests, ~30 s, 1 944 deals, 550 with an event calend
    In restricted sandboxes prefix with `NODE_USE_ENV_PROXY=1`.
 4. Confirm clicks in Günlük Raporlar → set `FIRSATBUFIRSAT_TRACKING_VERIFIED=true`.
 
-### District & sub-category pages
+### Category tree, district & sub-category pages
 
-Derived at build time (`src/lib/deals/facets.ts`) from every deal's `town` and `tags`:
-`/sehir/<il>/<ilçe>/`, `/sehir/<il>/<alt-kategori>/`, `/sehir/<il>/<ilçe>/<alt-kategori>/`, `/etiket/<alt-kategori>/`.
-Generated from ≥ 3 deals (tags: ≥ 5, city×tag: ≥ 4), indexed from ≥ 5 (tags: ≥ 8). Measured: 79 districts,
-267 sub-categories, ~1 100 combination pages, 1 011 sitemap URLs.
+The partner's category tree (Masaj › Spa › Hamam › Kese, Tiyatro › Yetişkin tiyatrosu › Komedi…, Aktivite, Turlar,
+Kahvaltı) lives in **`src/config/taxonomy.ts`** with each node's `tagIds[]` id, as supplied by the owner from the
+publisher dashboard. The same tree is applied automatically to **Türkiye, every province and every district** — no
+per-city or per-district API links are needed, because the location comes from each deal's own `city`/`town`
+(district and city queries return only deals already in the catalog, verified).
+
+Pages (`src/lib/deals/facets.ts`):
+`/etiket/<kategori>/` (Türkiye), `/sehir/<il>/<kategori>/`, `/sehir/<il>/<ilçe>/<kategori>/`, plus `/sehir/<il>/<ilçe>/`.
+A node's page lists its own deals and those of all its sub-categories; breadcrumbs show the ancestors
+(Ana sayfa › İstanbul › Masaj › Spa), and each page links its sub-categories (a leaf: its siblings). City, district and
+category pages show the tree grouped by main category. Other provider tags keep their own pages ("Diğer alt
+kategoriler"), except tags that only rename a node (≥ 90 % of their deals in a node they cover to ≥ 60 %).
+
+Generated from ≥ 3 deals (plain tags: ≥ 5 Türkiye-wide, ≥ 4 per city), indexed from ≥ 5 (plain tags Türkiye-wide: ≥ 8).
+Measured 2026-10-16: 5 740 pages, 291 Türkiye-wide sub-category pages, 1 106 sitemap URLs.
+
+**Adding categories later:** append nodes to `TAXONOMY` in `src/config/taxonomy.ts` (name, `tagId`, optional
+`children`; main nodes also name the FırsatBol `category`). Only the category name, its `tagIds[]` number and its
+parent are needed — never per-city or per-district links. The next build fetches the memberships.
 
 ### Images
 
@@ -97,13 +118,16 @@ Every "Fırsatı Gör" button opens `/git/<slug>/`: deal summary, destination ho
   the "Link Oluşturma" format (`{url}`, `{urlEncoded}`, `{publisherId}`, `{id}`) if the dashboard documents one.
 * `trackingStatus` is `unverified` until you set `FIRSATBUFIRSAT_TRACKING_VERIFIED=true` after confirming with the
   partner (e.g. via Günlük Raporlar showing clicks). Nothing on the site claims guaranteed commissions.
-* Required attribution text is rendered on every page using this data (`AttributionNotice`). To use the partner's
-  official HTML snippet (logo + link), save it as `src/config/attribution/firsatbufirsat.html` (scripts are refused).
+* The partner requires its official HTML snippet ("Fırsat bilgileri [logo] tarafından sağlanmaktadır.", linking to
+  `yayinci.firsatbufirsat.com/?pid=<publisherId>`) on every page that uses its data. It is saved verbatim in
+  `src/config/attribution/firsatbufirsat.html` (excluded from Prettier) and rendered by `AttributionNotice` on the
+  homepage, listings, search, category, city, district, sub-category, deal detail and transition pages. Snippets
+  containing scripts or event handlers are refused (the plain text is shown instead).
 
 ### Rate limits & caching
 
-One provider query per build (plus configured popular/new/pagination requests), ≥ 1 s between requests,
-15 s timeout, 3 retries with exponential backoff + jitter, `Retry-After` honoured. The scheduled sync queries at most
+Paged catalog, event and category queries per build (≈ 175 requests), ≥ 350 ms between request starts,
+3 in parallel, 30 s timeout, 3 retries with exponential backoff + jitter, `Retry-After` honoured. The scheduled sync queries at most
 once per `DEALS_REFRESH_INTERVAL_HOURS` (default 6) and rebuilds only when the data fingerprint changed. Adjust the
 interval to the partner's terms.
 

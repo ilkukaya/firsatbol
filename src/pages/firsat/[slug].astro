@@ -14,6 +14,7 @@ import { relatedDeals } from '../../lib/deals/taxonomy';
 import { formatDate, formatDateTime, formatPrice, formatSessionLong } from '../../lib/format';
 import { breadcrumbJsonLd } from '../../lib/seo';
 import { facetsOf, tagSlug } from '../../lib/deals/facets';
+import { TOPICS } from '../../config/taxonomy';
 
 export const getStaticPaths = (async () => {
   const { deals } = await getDeals();
@@ -29,10 +30,13 @@ const category = getCategory(deal.category);
 const related = relatedDeals(deal, deals, 4);
 const facets = facetsOf(deals);
 const tagPages = new Set(facets.tags.map((tag) => tag.slug));
-const tagLinks = deal.tags
-  .map((tag) => ({ slug: tagSlug(tag), name: tag }))
+// category-tree nodes first (deepest first: "Köpük masajı" before "Masaj"), then the deal's other tags
+const tagLinks = [
+  ...[...deal.topics].reverse().map((slug) => ({ slug, name: TOPICS.get(slug)?.name ?? slug })),
+  ...deal.tags.map((tag) => ({ slug: tagSlug(tag), name: tag })),
+]
   .filter((tag, index, all) => tagPages.has(tag.slug) && all.findIndex((t) => t.slug === tag.slug) === index)
-  .slice(0, 12);
+  .slice(0, 16);
 const districtPage =
   deal.citySlug && deal.district ? facets.districts.find((d) => d.citySlug === deal.citySlug && d.name === deal.district) : undefined;
 const location = [deal.district, deal.city].filter(Boolean).join(', ');
@@ -276,7 +280,6 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
           {deal.discountPercent !== null && (
             <p class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-save-bg px-3 py-1 text-sm font-extrabold text-save">
               <Icon name="percent" size={15} />%{deal.discountPercent} indirim
-              <span class="font-semibold">{deal.discountSource === 'calculated' ? '(fiyatlardan hesaplandı)' : '(kaynağın beyanı)'}</span>
             </p>
           )}
           {deal.price !== null ? (

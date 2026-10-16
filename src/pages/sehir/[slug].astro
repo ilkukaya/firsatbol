@@ -6,12 +6,13 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import DealGrid from '../../components/DealGrid.astro';
 import EmptyDeals from '../../components/EmptyDeals.astro';
 import Icon from '../../components/Icon.astro';
+import LinkGroups from '../../components/LinkGroups.astro';
 import { CATEGORIES } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
 import { MIN_CITY_INDEX, MIN_COMBO_PAGE, citiesWithDeals, countBy, type CityEntry } from '../../lib/deals/taxonomy';
 import { sortEntries, toIndexEntry } from '../../lib/deals/query';
 import { breadcrumbJsonLd } from '../../lib/seo';
-import { facetsOf } from '../../lib/deals/facets';
+import { facetsOf, topTagLinks, topicLinkGroups } from '../../lib/deals/facets';
 
 export const getStaticPaths = (async () => {
   const { deals } = await getDeals();
@@ -31,10 +32,16 @@ const { citySegments } = facetsOf(deals);
 const districtLinks = citySegments
   .filter((page) => page.citySlug === city.slug && page.kind === 'district')
   .sort((a, b) => b.deals.length - a.deals.length);
-const tagLinks = citySegments
-  .filter((page) => page.citySlug === city.slug && page.kind === 'tag')
-  .sort((a, b) => b.deals.length - a.deals.length)
-  .slice(0, 24);
+// category tree of the city (Masaj › Spa › Hamam…), then the remaining provider tags
+const subPages = new Set(citySegments.filter((page) => page.citySlug === city.slug && page.kind === 'tag').map((page) => page.slug));
+const cityHref = (slug: string) => `/sehir/${city.slug}/${slug}/`;
+const subcategoryGroups = [
+  ...topicLinkGroups(cityDeals, subPages, cityHref),
+  {
+    title: 'Diğer alt kategoriler',
+    items: topTagLinks(cityDeals, subPages, 24).map((tag) => ({ href: cityHref(tag.slug), label: tag.name, count: tag.count })),
+  },
+];
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
   { name: 'Şehirler', path: '/firsatlar/' },
@@ -97,21 +104,7 @@ const intro =
           </ul>
         </nav>
       )}
-      {tagLinks.length > 0 && (
-        <nav aria-label="Alt kategoriler" class="mt-5">
-          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Alt kategoriler</p>
-          <ul class="flex flex-wrap gap-2">
-            {tagLinks.map((page) => (
-              <li>
-                <a href={`/sehir/${city.slug}/${page.slug}/`} class="chip">
-                  <Icon name="tag" size={14} class="text-brand-text" />
-                  {page.name} <span class="text-xs text-muted">{page.deals.length}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <LinkGroups groups={subcategoryGroups} class="mt-5" />
     </div>
   </section>
   <div class="container-page py-10">

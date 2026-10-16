@@ -1,0 +1,29 @@
+---
+import Icon from './Icon.astro';
+import type { LinkGroup } from '../lib/deals/facets';
+
+interface Props {
+  groups: readonly LinkGroup[];
+  class?: string;
+}
+const { groups, class: className = 'mt-6' } = Astro.props;
+---
+
+{groups.map(
+  (group) =>
+    group.items.length > 0 && (
+      <nav aria-label={group.title} class={className}>
+        <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{group.title}</p>
+        <ul class="flex flex-wrap gap-2">
+          {group.items.map((item) => (
+            <li>
+              <a href={item.href} class="chip">
+                <Icon name="tag" size={14} class="text-brand-text" />
+                {item.label} <span class="text-xs text-muted">{item.count}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ),
+)}

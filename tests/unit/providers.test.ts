@@ -5,6 +5,7 @@ import {
   FBF_FIELD_MAP,
   buildRequestUrl,
   createFirsatBuFirsatAdapter,
+  parseIdPage,
   readFbfConfig,
   sweepPlan,
   transformResponse,
@@ -178,6 +179,55 @@ describe('request building & secrets', () => {
     expect(result.deals).toHaveLength(1);
     expect(urls[0]!.searchParams.get('itemInPage')).toBe('100');
     expect(urls.some((url) => url.searchParams.has('cityId'))).toBe(false); // whole catalog fit → no sweep
+  });
+  it('attaches category-tree memberships from tagIds[] queries (paged, failures tolerated)', async () => {
+    vi.stubEnv('FIRSATBUFIRSAT_API_KEY', 'K');
+    vi.stubEnv('FIRSATBUFIRSAT_PUBLISHER_ID', 'P');
+    vi.stubEnv('FIRSATBUFIRSAT_MIN_INTERVAL_MS', '0');
+    vi.stubEnv('FIRSATBUFIRSAT_RETRIES', '0');
+    vi.stubEnv('FIRSATBUFIRSAT_EVENTS_API_URL', 'off');
+    const record = (id: string) => ({
+      id,
+      title: `Fırsat ${id}`,
+      city: 'İstanbul',
+      showDealUrl: `https://www.firsatbufirsat.com/f/${id}?pid=P`,
+    });
+    const topicUrls: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = new URL(String(input));
+      const tag = url.searchParams.get('tagIds[]');
+      const page = Number(url.searchParams.get('p'));
+      let body: unknown = { result: 'SUCCESS', total: 2, deals: page === 1 ? [record('1'), record('2')] : [] };
+      if (tag) {
+        topicUrls.push(url.search);
+        if (tag === '514')
+          body = { result: 'SUCCESS', total: 2, deals: [record('1'), record('99')] }; // 99: not in the catalog
+        else if (tag === '2045') return new Response('err', { status: 500 });
+        else body = { result: 'SUCCESS', total: 0, deals: [] };
+      }
+      return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
+    });
+    const config = readFbfConfig();
+    expect(config.topics.find((t) => t.slug === 'kese')?.tagId).toBe(514);
+    const result = await createFirsatBuFirsatAdapter(config).fetchDeals({ now });
+    expect(result.diagnostics.ok).toBe(true);
+    expect(result.deals.find((d) => d.externalId === '1')?.topics).toEqual(['kese']);
+    expect(result.deals.find((d) => d.externalId === '2')?.topics).toEqual([]);
+    expect(topicUrls.some((q) => q.includes('tagIds%5B%5D=514'))).toBe(true);
+    expect(result.diagnostics.warnings.join(' ')).toContain('1 kategori alınamadı');
+  });
+  it('can switch the category-tree step off', () => {
+    vi.stubEnv('FIRSATBUFIRSAT_TOPICS', 'false');
+    expect(readFbfConfig().topics).toEqual([]);
+  });
+  it('reads ids and totals of membership pages', () => {
+    expect(
+      parseIdPage(JSON.stringify({ result: 'SUCCESS', total: 3, deals: [{ id: 5 }, { id: '6' }, {}] }), 'application/json', 'id'),
+    ).toEqual({
+      ids: ['5', '6'],
+      total: 3,
+    });
+    expect(() => parseIdPage(JSON.stringify({ result: 'FAIL' }), 'application/json', 'id')).toThrow(/FAIL/);
   });
   it('reports not-configured without throwing', async () => {
     vi.stubEnv('FIRSATBUFIRSAT_API_KEY', '');

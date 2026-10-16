@@ -1,7 +1,13 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const ATTRIBUTION = 'Fırsat bilgileri Fırsat Bu Fırsat tarafından sağlanmaktadır.';
+// the partner's official snippet (src/config/attribution/firsatbufirsat.html): text + logo + referral link
+const expectAttribution = async (page: Page) => {
+  const snippet = page.locator('[data-attribution] a[href="https://yayinci.firsatbufirsat.com/?pid=842"]').first();
+  await expect(snippet).toBeVisible();
+  await expect(snippet).toContainText(/Fırsat bilgileri\s+tarafından sağlanmaktadır\./);
+  await expect(snippet.locator('img[alt="Fırsat Bu Fırsat - Şehir Fırsatları"]')).toBeVisible();
+};
 
 test.beforeEach(async ({ page }) => {
   // fixtures are dated around 2026-10-16; freeze the browser clock so tests don't drift
@@ -15,7 +21,7 @@ test('homepage shows real sections, attribution and fixture warning', async ({ p
   await expect(page.locator('h1')).toContainText('Fırsat çok');
   await expect(page.getByRole('heading', { name: 'Öne Çıkan Fırsatlar' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Şehrindeki Fırsatlar' })).toBeVisible();
-  await expect(page.locator('[data-attribution]').first()).toContainText(ATTRIBUTION);
+  await expectAttribution(page);
   await expect(page.getByText('SENTETİK ÖRNEK VERİDİR')).toBeVisible();
   // fixture builds must never be indexable
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
@@ -73,7 +79,7 @@ test('deal detail: gallery, CTA via transition page, disclosure and attribution'
   await expect(cta).toHaveAttribute('href', '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
   await expect(page.getByText('%35 indirim')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Fırsat özeti' }).getByText('iş ortaklığı bağlantısıdır')).toBeVisible();
-  await expect(page.locator('[data-attribution]')).toContainText(ATTRIBUTION);
+  await expectAttribution(page);
   await expect(page.getByRole('navigation', { name: 'Sayfa konumu' })).toContainText('Yeme İçme');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
   const ld = await page.locator('script[type="application/ld+json"]').allTextContents();
@@ -90,7 +96,7 @@ test('transition page shows the destination and forwards to the unchanged referr
   const now = page.locator('[data-redirect-now]');
   await expect(now).toHaveAttribute('href', target);
   await expect(now).toHaveAttribute('rel', /sponsored/);
-  await expect(page.getByText(ATTRIBUTION)).toBeVisible();
+  await expectAttribution(page);
   // the browser clock is frozen in beforeEach; advance it to trigger the automatic redirect
   const navigation = page.waitForRequest((request) => request.url() === target);
   await page.clock.runFor(3500);

@@ -96,6 +96,8 @@ export const dealSchema = z
     /** `price` is the lowest of several differing prices ("…'den başlayan"). */
     priceFrom: z.boolean(),
     tags: z.array(z.string()),
+    /** Partner category tree memberships (`src/config/taxonomy.ts` slugs, ancestors included). */
+    topics: z.array(z.string()),
     /** Whether the detail page may be indexed (see `indexability` in normalize.ts). */
     indexable: z.boolean(),
   })

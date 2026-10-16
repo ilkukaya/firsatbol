@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import AttributionNotice from '../../components/AttributionNotice.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Icon from '../../components/Icon.astro';
 import { getDeals } from '../../lib/deals/repository';
@@ -44,5 +45,6 @@ const crumbs = [
         </li>
       ))}
     </ul>
+    <AttributionNotice deals={deals} class="mt-10" />
   </div>
 </BaseLayout>

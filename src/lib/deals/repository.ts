@@ -6,6 +6,7 @@ import { readBool, readEnv, isProductionContext } from '../env';
 import { getNetworkProviders } from '../providers/registry';
 import { FBF_FIELD_MAP, transformResponse } from '../providers/firsatbufirsat';
 import type { ProviderDiagnostics } from '../providers/types';
+import { resolveTopics } from './topics';
 import { buildSlug, computeIndexable, dedupeDeals, ensureUniqueSlugs, isActive, markDuplicateTitles, resolveDiscount } from './normalize';
 import { dealSchema, type Deal } from './schema';
 import { dealsFingerprint } from './fingerprint';
@@ -86,7 +87,11 @@ async function loadSnapshot(): Promise<DealsSnapshot> {
   const withNotes = await applyDealNotes(collected);
   const { deals: unique, duplicates } = dedupeDeals(withNotes);
   const active = unique.filter((deal) => isActive(deal, now));
-  const finalDeals = markDuplicateTitles(ensureUniqueSlugs(active)).map((deal) => (fixtureMode ? { ...deal, indexable: false } : deal));
+  const finalDeals = markDuplicateTitles(ensureUniqueSlugs(active)).map((deal) => ({
+    ...deal,
+    topics: resolveTopics(deal),
+    ...(fixtureMode ? { indexable: false } : {}),
+  }));
 
   console.info(`[deals] Toplam yayında: ${finalDeals.length} (yinelenen: ${duplicates}, fixture=${fixtureMode})`);
   return { deals: finalDeals, generatedAt: now.toISOString(), fixtureMode, diagnostics, duplicates, networkFingerprint };
@@ -184,6 +189,7 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       sessions: [],
       priceFrom: false,
       tags: data.tags,
+      topics: [],
       indexable: computeIndexable(summary, description, true),
     };
     const parsed = dealSchema.safeParse(candidate);
