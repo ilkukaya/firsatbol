@@ -71,7 +71,7 @@ function renderCard(entry: DealIndexEntry, categoryNames: Record<string, string>
     ${meta ? `<ul class="flex flex-wrap gap-x-3 gap-y-1 text-[0.82rem] text-muted">${meta}</ul>` : ''}
     <div class="mt-auto flex items-center justify-between gap-3 border-t border-line/70 pt-3">
       <div class="min-w-0">${price}</div>
-      <a href="${escapeHtml(entry.u)}" target="_blank" rel="sponsored nofollow noopener" class="deal-cta btn-cta relative z-10 shrink-0 px-4 py-2 text-sm" data-deal-link data-deal-id="${escapeHtml(entry.id)}" data-provider="${escapeHtml(entry.pv)}" data-category="${entry.c}"${entry.ct ? ` data-city="${entry.ct}"` : ''} data-placement="${placement}">Fırsatı Gör<span class="sr-only"> (${escapeHtml(entry.m ?? entry.pn)} sitesinde, yeni sekmede açılır)</span>${icon('external')}</a>
+      <a href="/git/${entry.s}/" target="_blank" rel="nofollow" class="deal-cta btn-cta relative z-10 shrink-0 px-4 py-2 text-sm" data-deal-link data-deal-id="${escapeHtml(entry.id)}" data-provider="${escapeHtml(entry.pv)}" data-category="${entry.c}"${entry.ct ? ` data-city="${entry.ct}"` : ''} data-placement="${placement}">Fırsatı Gör<span class="sr-only"> (${escapeHtml(entry.m ?? entry.pn)} sitesinde, yeni sekmede açılır)</span>${icon('external')}</a>
     </div>
     <p class="text-[0.7rem] text-muted">Kaynak: ${escapeHtml(entry.pn)}</p>
   </div>

@@ -73,6 +73,8 @@ export const dealSchema = z
     imageUrl: httpsUrl.nullable(),
     /** Larger image for the detail page (falls back to imageUrl). */
     imageLargeUrl: httpsUrl.nullable(),
+    /** Every gallery image the provider supplies (large size), main image first. */
+    images: z.array(httpsUrl),
     sourceUrl: httpsUrl,
     affiliateUrl: httpsUrl.nullable(),
     trackingStatus: trackingStatusSchema,
@@ -131,7 +133,6 @@ export interface DealIndexEntry {
   dp: number | null; // discount %
   cur: string;
   img: string | null;
-  u: string; // outbound URL (affiliate when available)
   pv: string; // provider id
   pn: string; // provider name
   vu: string | null; // valid until

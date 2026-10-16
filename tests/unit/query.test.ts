@@ -16,7 +16,6 @@ const entry = (over: Partial<DealIndexEntry>): DealIndexEntry => ({
   dp: null,
   cur: 'TRY',
   img: null,
-  u: 'https://a.com',
   pv: 'p',
   pn: 'P',
   vu: null,

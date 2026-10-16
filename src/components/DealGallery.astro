@@ -1,0 +1,101 @@
+---
+/**
+ * Swipeable gallery of every image the provider supplies. Only the first image loads eagerly;
+ * the rest are lazy and load as the visitor swipes (no thumbnail strip that would download all
+ * of them at once). Works without JS as a horizontally scrollable strip.
+ */
+import Icon from './Icon.astro';
+
+interface Props {
+  images: readonly string[];
+  title: string;
+  fallbackIcon: Parameters<typeof Icon>[0]['name'];
+}
+const { images, title, fallbackIcon } = Astro.props;
+---
+
+{images.length === 0 ? (
+  <div class="flex aspect-[16/7] w-full items-center justify-center rounded-[1.5rem] border border-line bg-gradient-to-br from-brand-50 to-sand text-brand-text">
+    <Icon name={fallbackIcon} size={64} strokeWidth={1.3} />
+  </div>
+) : (
+  <div class="relative overflow-hidden rounded-[1.5rem] border border-line bg-sand" data-gallery>
+    <ul
+      class="flex snap-x snap-mandatory overflow-x-auto scroll-smooth scrollbar-none"
+      data-gallery-track
+      aria-label={`${title} görselleri`}
+      tabindex="0"
+    >
+      {images.map((src, index) => (
+        <li class="w-full shrink-0 snap-center" aria-label={`Görsel ${index + 1} / ${images.length}`}>
+          <img
+            src={src}
+            alt={index === 0 ? title : `${title} — görsel ${index + 1}`}
+            width="960"
+            height="600"
+            loading={index === 0 ? 'eager' : 'lazy'}
+            fetchpriority={index === 0 ? 'high' : 'low'}
+            decoding="async"
+            class="aspect-[16/10] w-full object-cover"
+          />
+        </li>
+      ))}
+    </ul>
+    {images.length > 1 && (
+      <>
+        <button
+          type="button"
+          class="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-md backdrop-blur hover:bg-white sm:flex"
+          data-gallery-prev
+        >
+          <span class="sr-only">Önceki görsel</span>
+          <Icon name="arrow-left" size={20} />
+        </button>
+        <button
+          type="button"
+          class="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-md backdrop-blur hover:bg-white sm:flex"
+          data-gallery-next
+        >
+          <span class="sr-only">Sonraki görsel</span>
+          <Icon name="arrow-right" size={20} />
+        </button>
+        <p
+          class="absolute bottom-3 right-3 rounded-full bg-ink/75 px-3 py-1 text-xs font-semibold text-white"
+          aria-live="polite"
+          data-gallery-counter
+        >
+          1 / {images.length}
+        </p>
+      </>
+    )}
+  </div>
+)}
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-gallery]').forEach((gallery) => {
+    const track = gallery.querySelector<HTMLElement>('[data-gallery-track]');
+    const counter = gallery.querySelector<HTMLElement>('[data-gallery-counter]');
+    if (!track) return;
+    const slides = track.children.length;
+    const current = () => Math.round(track.scrollLeft / track.clientWidth);
+    const go = (index: number) =>
+      track.scrollTo({ left: Math.max(0, Math.min(slides - 1, index)) * track.clientWidth, behavior: 'smooth' });
+    gallery.querySelector('[data-gallery-prev]')?.addEventListener('click', () => go(current() - 1));
+    gallery.querySelector('[data-gallery-next]')?.addEventListener('click', () => go(current() + 1));
+    track.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowRight') go(current() + 1);
+      if (event.key === 'ArrowLeft') go(current() - 1);
+    });
+    let frame = 0;
+    track.addEventListener(
+      'scroll',
+      () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          if (counter) counter.textContent = `${current() + 1} / ${slides}`;
+        });
+      },
+      { passive: true },
+    );
+  });
+</script>

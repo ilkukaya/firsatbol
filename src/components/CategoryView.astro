@@ -15,6 +15,8 @@ import { MIN_COMBO_PAGE, countBy } from '../lib/deals/taxonomy';
 import { paginate } from '../lib/deals/query';
 import { readingMinutes } from '../lib/content';
 import { breadcrumbJsonLd, itemListJsonLd } from '../lib/seo';
+import { getDeals } from '../lib/deals/repository';
+import { facetsOf, topTagLinks } from '../lib/deals/facets';
 
 interface Props {
   category: Category;
@@ -40,6 +42,9 @@ const cityLinks = [...cityCounts.entries()]
     href: count >= MIN_COMBO_PAGE ? `/kategori/${category.slug}/${slug}/` : `/firsatlar/?kategori=${category.slug}&sehir=${slug}`,
   }));
 
+const { deals: allDeals } = await getDeals();
+const tagPages = new Set(facetsOf(allDeals).tags.map((tag) => tag.slug));
+const subcategories = city ? [] : topTagLinks(deals, tagPages, 24);
 const guides = (await getCollection('guides', (entry) => !entry.data.draft && entry.data.relatedCategories.includes(category.slug))).slice(
   0,
   3,
@@ -108,6 +113,21 @@ const crumbs = [
           </aside>
         )}
       </div>
+      {subcategories.length > 0 && page === 1 && (
+        <nav aria-label="Alt kategoriler" class="mt-6">
+          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Alt kategoriler</p>
+          <ul class="flex flex-wrap gap-2">
+            {subcategories.map((tag) => (
+              <li>
+                <a href={`/etiket/${tag.slug}/`} class="chip">
+                  <Icon name="tag" size={14} class="text-brand-text" />
+                  {tag.name} <span class="text-xs text-muted">{tag.count}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
       {cityLinks.length > 0 && (
         <nav aria-label="Şehre göre" class="mt-6">
           <ul class="flex flex-wrap gap-2">

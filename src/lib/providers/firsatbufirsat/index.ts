@@ -42,6 +42,7 @@ export const FBF_FIELD_MAP: FieldMap = {
   discountPercent: 'discountPercent',
   imageUrl: 'image450_H',
   imageLargeUrl: 'image1200x1200',
+  images: 'dealImages',
   sourceUrl: 'showDealUrl',
   affiliateUrl: 'showDealUrl',
   validUntil: 'couponEndDate',
@@ -242,6 +243,8 @@ export function transformResponse(
     }
     if (config.categoryHint && !input.category) input.category = config.categoryHint;
     if (signals.popular) input.popular = true;
+    // the partner tags its best sellers ("çok satan", "çok satan istanbul"): a real popularity signal
+    if (typeof input.tags === 'string' && input.tags.toLocaleLowerCase('tr-TR').includes('çok satan')) input.popular = true;
     if (signals.isNew) input.isNew = true;
     // The partner's URLs carry our publisher id (pid=…): that is the referral link.
     if (typeof input.affiliateUrl === 'string' && config.publisherId && !input.affiliateUrl.includes(config.publisherId)) {

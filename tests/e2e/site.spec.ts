@@ -64,12 +64,13 @@ test('search page finds deals by district', async ({ page }) => {
   await expect(page.locator('[data-result-count]')).toHaveText(/1 fırsat bulundu/);
 });
 
-test('deal detail: outbound link keeps referral URL, disclosure and attribution', async ({ page }) => {
+test('deal detail: gallery, CTA via transition page, disclosure and attribution', async ({ page }) => {
   await page.goto('/firsat/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
   await expect(page.locator('h1')).toContainText('Boğaz manzaralı');
+  await expect(page.locator('[data-gallery-track] li')).toHaveCount(3);
+  await expect(page.locator('[data-gallery-counter]')).toHaveText('1 / 3');
   const cta = page.locator('a[data-placement="detail"]');
-  await expect(cta).toHaveAttribute('href', 'https://example.com/firsat/1001?pid=PUBLISHER_TEST');
-  await expect(cta).toHaveAttribute('rel', /sponsored/);
+  await expect(cta).toHaveAttribute('href', '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
   await expect(page.getByText('%35 indirim')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Fırsat özeti' }).getByText('iş ortaklığı bağlantısıdır')).toBeVisible();
   await expect(page.locator('[data-attribution]')).toContainText(ATTRIBUTION);
@@ -78,6 +79,34 @@ test('deal detail: outbound link keeps referral URL, disclosure and attribution'
   const ld = await page.locator('script[type="application/ld+json"]').allTextContents();
   expect(ld.join('')).toContain('BreadcrumbList');
   expect(ld.join('')).not.toMatch(/"Review"|"AggregateRating"|"Offer"/);
+});
+
+test('transition page shows the destination and forwards to the unchanged referral URL', async ({ page }) => {
+  const target = 'https://example.com/firsat/1001?pid=PUBLISHER_TEST';
+  await page.goto('/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, nofollow');
+  await expect(page.getByRole('heading', { name: 'Fırsatınız hazır!' })).toBeVisible();
+  await expect(page.getByText('Gideceğiniz adres:')).toContainText('example.com');
+  const now = page.locator('[data-redirect-now]');
+  await expect(now).toHaveAttribute('href', target);
+  await expect(now).toHaveAttribute('rel', /sponsored/);
+  await expect(page.getByText(ATTRIBUTION)).toBeVisible();
+  // the browser clock is frozen in beforeEach; advance it to trigger the automatic redirect
+  const navigation = page.waitForRequest((request) => request.url() === target);
+  await page.clock.runFor(3500);
+  await navigation;
+});
+
+test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {
+  await page.goto('/git/ornek-veri-60-dakika-aromaterapi-masaji-1002/');
+  let left = false;
+  page.on('request', (request) => {
+    if (request.url().startsWith('https://example.com/firsat/1002')) left = true;
+  });
+  await page.locator('[data-redirect-cancel]').click();
+  await expect(page).toHaveURL(/\/firsat\/ornek-veri-60-dakika-aromaterapi-masaji-1002\/$/);
+  await page.clock.runFor(5000);
+  expect(left).toBe(false);
 });
 
 test('deal without price never shows an invented price or discount', async ({ page }) => {
@@ -90,6 +119,7 @@ test('deal clicks send an anonymous first-party event', async ({ page }) => {
   await page.goto('/kategori/etkinlik/');
   const beacon = page.waitForRequest((request) => request.url().endsWith('/api/event') && request.method() === 'POST');
   const popup = page.waitForEvent('popup');
+  await expect(page.locator('a[data-deal-link]').first()).toHaveAttribute('href', /^\/git\//);
   await page.locator('a[data-deal-link]').first().click();
   const body = JSON.parse((await beacon).postData() ?? '{}');
   expect(body).toMatchObject({ type: 'deal_click', provider: 'firsatbufirsat', category: 'etkinlik' });
@@ -174,6 +204,7 @@ for (const path of [
   '/rehber/kampanya-sartlari-nasil-kontrol-edilir/',
   '/iletisim/',
   '/gizlilik-politikasi/',
+  '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/',
 ]) {
   test(`accessibility (axe) ${path}`, async ({ page }) => {
     await page.goto(path);

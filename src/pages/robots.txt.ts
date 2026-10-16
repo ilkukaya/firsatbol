@@ -8,6 +8,6 @@ export const GET: APIRoute = () => {
   const isPreview = context !== undefined && context !== 'production';
   const body = isPreview
     ? 'User-agent: *\nDisallow: /\n'
-    : `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /data/\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
+    : `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /data/\nDisallow: /git/\n\nSitemap: ${absoluteUrl('/sitemap.xml')}\n`;
   return new Response(body, { headers: { 'content-type': 'text/plain; charset=utf-8' } });
 };

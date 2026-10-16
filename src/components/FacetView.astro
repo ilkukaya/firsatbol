@@ -1,0 +1,113 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import AttributionNotice from './AttributionNotice.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import DealGrid from './DealGrid.astro';
+import Icon from './Icon.astro';
+import { CATEGORIES } from '../config/categories';
+import type { Deal } from '../lib/deals/schema';
+import { FACET_PAGE_LIMIT } from '../lib/deals/facets';
+import { countBy } from '../lib/deals/taxonomy';
+import { breadcrumbJsonLd, itemListJsonLd, type Crumb } from '../lib/seo';
+
+interface Props {
+  title: string;
+  heading: string;
+  eyebrow: string;
+  description: string;
+  /** Short context sentence(s) shown before the computed summary. */
+  lead?: string | undefined;
+  deals: readonly Deal[];
+  crumbs: Crumb[];
+  canonical: string;
+  noindex: boolean;
+  /** Related facet links (districts, sub-categories…). */
+  links?: { title: string; items: { href: string; label: string; count: number }[] }[];
+  /** Search term for "see all" when the list is truncated. */
+  searchTerm?: string | undefined;
+  placement: string;
+}
+const { title, heading, eyebrow, description, lead, deals, crumbs, canonical, noindex, links = [], searchTerm, placement } = Astro.props;
+const shown = deals.slice(0, FACET_PAGE_LIMIT);
+
+// factual summary from the data itself (no invented claims)
+const byCategory = [...countBy(deals, (deal) => deal.category).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
+const categoryText = byCategory
+  .map(([slug, count]) => `${CATEGORIES.find((category) => category.slug === slug)?.name ?? slug} (${count})`)
+  .join(', ');
+const prices = deals.map((deal) => deal.price).filter((price): price is number => price !== null);
+const minPrice = prices.length ? Math.min(...prices) : null;
+const discounted = deals.filter((deal) => deal.discountPercent !== null).length;
+const withSessions = deals.filter((deal) => deal.sessions.length > 0).length;
+const summary = [
+  `Şu anda ${deals.length.toLocaleString('tr-TR')} güncel fırsat listeleniyor.`,
+  categoryText && `En çok fırsat bulunan kategoriler: ${categoryText}.`,
+  minPrice !== null && `Fiyatlar ${minPrice.toLocaleString('tr-TR')} TL’den başlıyor.`,
+  discounted > 0 && `${discounted} fırsatta indirim oranı kaynağında doğrulanabiliyor.`,
+  withSessions > 0 && `${withSessions} etkinliğin seans takvimi sayfasında yer alıyor.`,
+]
+  .filter(Boolean)
+  .join(' ');
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonical}
+  noindex={noindex}
+  jsonLd={[
+    breadcrumbJsonLd(crumbs),
+    ...(shown.length
+      ? [
+          itemListJsonLd(
+            heading,
+            shown.map((d) => ({ name: d.title, path: `/firsat/${d.slug}/` })),
+          ),
+        ]
+      : []),
+  ]}
+>
+  <section class="border-b border-line bg-white">
+    <div class="container-page py-8 sm:py-10">
+      <Breadcrumbs crumbs={crumbs} />
+      <div class="mt-5 max-w-3xl">
+        <p class="eyebrow mb-2">{eyebrow}</p>
+        <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">{heading}</h1>
+        <p class="mt-4 text-[1.05rem] leading-relaxed text-ink-2">
+          {lead && <>{lead} </>}
+          {summary}
+        </p>
+      </div>
+      {links.map(
+        (group) =>
+          group.items.length > 0 && (
+            <nav aria-label={group.title} class="mt-6">
+              <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{group.title}</p>
+              <ul class="flex flex-wrap gap-2">
+                {group.items.map((item) => (
+                  <li>
+                    <a href={item.href} class="chip">
+                      <Icon name="tag" size={14} class="text-brand-text" />
+                      {item.label} <span class="text-xs text-muted">{item.count}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ),
+      )}
+    </div>
+  </section>
+
+  <div class="container-page py-10">
+    <DealGrid deals={shown} placement={placement} eagerCount={2} />
+    {deals.length > shown.length && (
+      <div class="mt-8 text-center">
+        <a href={searchTerm ? `/arama/?q=${encodeURIComponent(searchTerm)}` : '/firsatlar/'} class="btn-ghost">
+          Tüm {deals.length.toLocaleString('tr-TR')} fırsatı gör
+        </a>
+      </div>
+    )}
+    <AttributionNotice deals={deals} class="mt-10" />
+  </div>
+</BaseLayout>

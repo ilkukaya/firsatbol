@@ -20,6 +20,7 @@ export interface RawDealInput {
   currency?: unknown;
   imageUrl?: unknown;
   imageLargeUrl?: unknown;
+  images?: unknown;
   sourceUrl?: unknown;
   affiliateUrl?: unknown;
   validFrom?: unknown;
@@ -248,6 +249,20 @@ export function parseOptions(value: unknown): { title: string; price: number | n
   return options.slice(0, 30);
 }
 
+/** Gallery: flatten candidate image values (strings or arrays of strings/objects), dedupe, cap at 20. */
+export function parseImages(values: readonly unknown[], redact: readonly string[] = []): string[] {
+  const urls: string[] = [];
+  const add = (value: unknown) => {
+    if (Array.isArray(value)) return value.forEach(add);
+    const candidate =
+      value && typeof value === 'object' ? ((value as Record<string, unknown>).url ?? (value as Record<string, unknown>).src) : value;
+    const url = parseUrl(candidate, redact);
+    if (url && !urls.includes(url)) urls.push(url);
+  };
+  values.forEach(add);
+  return urls.slice(0, 20);
+}
+
 /** Accept only absolute http(s) URLs; upgrade protocol-relative URLs. */
 export function parseUrl(value: unknown, redact: readonly string[] = []): string | null {
   if (typeof value !== 'string') return null;
@@ -431,6 +446,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     discountSource: discount.source,
     imageUrl: parseUrl(raw.imageUrl, ctx.redact),
     imageLargeUrl: parseUrl(raw.imageLargeUrl, ctx.redact),
+    images: parseImages([raw.imageLargeUrl, raw.images], ctx.redact),
     sourceUrl: sourceUrl ?? outbound,
     affiliateUrl,
     trackingStatus: affiliateUrl ? ctx.trackingStatus : 'none',

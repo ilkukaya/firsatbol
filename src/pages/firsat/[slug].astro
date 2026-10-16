@@ -5,6 +5,7 @@ import AttributionNotice from '../../components/AttributionNotice.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import DealGrid from '../../components/DealGrid.astro';
 import Icon from '../../components/Icon.astro';
+import DealGallery from '../../components/DealGallery.astro';
 import SectionHeader from '../../components/SectionHeader.astro';
 import { getCategory } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
@@ -12,6 +13,7 @@ import type { Deal } from '../../lib/deals/schema';
 import { relatedDeals } from '../../lib/deals/taxonomy';
 import { formatDate, formatDateTime, formatPrice, formatSessionLong } from '../../lib/format';
 import { breadcrumbJsonLd } from '../../lib/seo';
+import { facetsOf, tagSlug } from '../../lib/deals/facets';
 
 export const getStaticPaths = (async () => {
   const { deals } = await getDeals();
@@ -25,7 +27,14 @@ const { deal } = Astro.props;
 const { deals } = await getDeals();
 const category = getCategory(deal.category);
 const related = relatedDeals(deal, deals, 4);
-const outbound = deal.affiliateUrl ?? deal.sourceUrl;
+const facets = facetsOf(deals);
+const tagPages = new Set(facets.tags.map((tag) => tag.slug));
+const tagLinks = deal.tags
+  .map((tag) => ({ slug: tagSlug(tag), name: tag }))
+  .filter((tag, index, all) => tagPages.has(tag.slug) && all.findIndex((t) => t.slug === tag.slug) === index)
+  .slice(0, 12);
+const districtPage =
+  deal.citySlug && deal.district ? facets.districts.find((d) => d.citySlug === deal.citySlug && d.name === deal.district) : undefined;
 const location = [deal.district, deal.city].filter(Boolean).join(', ');
 const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price;
 const saving = showOriginal ? deal.originalPrice! - deal.price! : null;
@@ -77,23 +86,11 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
 
     <div class="mt-6 grid gap-8 lg:grid-cols-[1.45fr_1fr] lg:items-start" data-valid-until={deal.validUntil ?? undefined}>
       <div class="min-w-0">
-        <div class="overflow-hidden rounded-[1.5rem] border border-line bg-sand">
-          {deal.imageUrl ? (
-            <img
-              src={deal.imageLargeUrl ?? deal.imageUrl}
-              alt={deal.title}
-              width="960"
-              height="600"
-              fetchpriority="high"
-              decoding="async"
-              class="aspect-[16/10] w-full object-cover"
-            />
-          ) : (
-            <div class="flex aspect-[16/7] w-full items-center justify-center bg-gradient-to-br from-brand-50 to-sand text-brand-text">
-              <Icon name={category?.icon ?? 'tag'} size={64} strokeWidth={1.3} />
-            </div>
-          )}
-        </div>
+        <DealGallery
+          images={deal.images.length ? deal.images : deal.imageUrl ? [deal.imageUrl] : []}
+          title={deal.title}
+          fallbackIcon={category?.icon ?? 'tag'}
+        />
 
         <div class="mt-6">
           <div class="flex flex-wrap items-center gap-2 text-sm">
@@ -230,6 +227,28 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
             </ul>
           </section>
         )}
+        {(tagLinks.length > 0 || districtPage) && (
+          <nav class="mt-8" aria-label="İlgili sayfalar">
+            <ul class="flex flex-wrap gap-2">
+              {districtPage && (
+                <li>
+                  <a href={`/sehir/${districtPage.citySlug}/${districtPage.slug}/`} class="chip">
+                    <Icon name="pin" size={14} class="text-brand-text" />
+                    {districtPage.name} fırsatları
+                  </a>
+                </li>
+              )}
+              {tagLinks.map((tag) => (
+                <li>
+                  <a href={`/etiket/${tag.slug}/`} class="chip">
+                    <Icon name="tag" size={14} class="text-brand-text" />
+                    {tag.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
 
         <section class="mt-8 rounded-2xl bg-sand/70 p-5" aria-labelledby="kontrol">
           <h2 id="kontrol" class="font-bold">
@@ -305,9 +324,9 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
           </dl>
 
           <a
-            href={outbound}
+            href={`/git/${deal.slug}/`}
             target="_blank"
-            rel="sponsored nofollow noopener"
+            rel="nofollow"
             class="deal-cta btn-cta mt-5 w-full py-3.5 text-base"
             data-deal-link
             data-deal-id={deal.id}

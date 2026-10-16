@@ -1,0 +1,79 @@
+---
+import type { GetStaticPaths } from 'astro';
+import FacetView from '../../../../components/FacetView.astro';
+import { getDeals } from '../../../../lib/deals/repository';
+import { FACET_MIN_INDEX, facetsOf, topTagLinks, type CityFacetPage } from '../../../../lib/deals/facets';
+
+/** /sehir/<city>/<district>/ and /sehir/<city>/<tag>/ (a district wins a slug clash). */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return facetsOf(deals).citySegments.map((page) => ({ params: { slug: page.citySlug, seg: page.slug }, props: { page } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: CityFacetPage;
+}
+const { page } = Astro.props;
+const { deals } = await getDeals();
+const { districtTags, citySegments } = facetsOf(deals);
+const base = `/sehir/${page.citySlug}/${page.slug}/`;
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: page.cityName, path: `/sehir/${page.citySlug}/` },
+  { name: page.name, path: base },
+];
+
+let links: { title: string; items: { href: string; label: string; count: number }[] }[];
+if (page.kind === 'district') {
+  const available = new Set(districtTags.filter((t) => t.citySlug === page.citySlug && t.districtSlug === page.slug).map((t) => t.slug));
+  links = [
+    {
+      title: 'Alt kategoriler',
+      items: topTagLinks(page.deals, available, 24).map((t) => ({ href: `${base}${t.slug}/`, label: t.name, count: t.count })),
+    },
+  ];
+} else {
+  const districtsWithTag = districtTags
+    .filter((t) => t.citySlug === page.citySlug && t.slug === page.slug)
+    .sort((a, b) => b.deals.length - a.deals.length)
+    .slice(0, 24)
+    .map((t) => ({ href: `/sehir/${t.citySlug}/${t.districtSlug}/${t.slug}/`, label: t.districtName, count: t.deals.length }));
+  const otherTags = new Set(citySegments.filter((p) => p.kind === 'tag' && p.citySlug === page.citySlug).map((p) => p.slug));
+  otherTags.delete(page.slug);
+  links = [
+    { title: 'İlçelere göre', items: districtsWithTag },
+    {
+      title: `${page.cityName} için diğer alt kategoriler`,
+      items: topTagLinks(
+        deals.filter((d) => d.citySlug === page.citySlug),
+        otherTags,
+        16,
+      ).map((t) => ({ href: `/sehir/${page.citySlug}/${t.slug}/`, label: t.name, count: t.count })),
+    },
+  ];
+}
+const isDistrict = page.kind === 'district';
+const heading = isDistrict ? `${page.name} fırsatları` : `${page.cityName} ${page.name.toLocaleLowerCase('tr-TR')} fırsatları`;
+const title = isDistrict ? `${page.name}, ${page.cityName} Fırsatları ve Kampanyaları` : `${page.cityName} ${page.name} Fırsatları`;
+---
+
+<FacetView
+  title={title}
+  heading={heading}
+  eyebrow={isDistrict ? `${page.cityName} · İlçe` : `${page.cityName} · Alt kategori`}
+  description={
+    isDistrict
+      ? `${page.name} (${page.cityName}) için ${page.deals.length} güncel fırsat: yeme içme, spa, etkinlik ve daha fazlası. Fiyat ve koşulları karşılaştırın.`
+      : `${page.cityName} ${page.name.toLocaleLowerCase('tr-TR')} fırsatları: ${page.deals.length} güncel kampanya, ilçe ve fiyat bilgisiyle.`
+  }
+  lead={
+    isDistrict ? `${page.name}, ${page.cityName} ilçesindeki işletmelerin iş ortaklarımız aracılığıyla sunduğu kampanyalar.` : undefined
+  }
+  deals={page.deals}
+  crumbs={crumbs}
+  canonical={base}
+  noindex={page.deals.length < FACET_MIN_INDEX}
+  links={links}
+  searchTerm={isDistrict ? page.name : `${page.cityName} ${page.name}`}
+  placement={`${page.kind}-${page.citySlug}-${page.slug}`}
+/>

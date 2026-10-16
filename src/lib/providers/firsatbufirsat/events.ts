@@ -145,6 +145,7 @@ export function mergeEventSessions(
       discountSource: null,
       imageUrl: first.imageUrl,
       imageLargeUrl: first.imageLargeUrl,
+      images: first.imageLargeUrl ? [first.imageLargeUrl] : [],
       sourceUrl: url,
       affiliateUrl: ctx.publisherId && url.includes(ctx.publisherId) ? url : null,
       trackingStatus: ctx.publisherId && url.includes(ctx.publisherId) ? ctx.trackingStatus : 'none',

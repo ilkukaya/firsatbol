@@ -14,7 +14,6 @@ interface Props {
 const { deal, placement, eager = false, headingLevel = 'h3' } = Astro.props;
 const Heading = headingLevel;
 const category = getCategory(deal.category);
-const outbound = deal.affiliateUrl ?? deal.sourceUrl;
 const location = [deal.district, deal.city].filter(Boolean).join(', ');
 const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price;
 ---
@@ -111,9 +110,9 @@ const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.
         )}
       </div>
       <a
-        href={outbound}
+        href={`/git/${deal.slug}/`}
         target="_blank"
-        rel="sponsored nofollow noopener"
+        rel="nofollow"
         class="deal-cta btn-cta relative z-10 shrink-0 px-4 py-2 text-sm"
         data-deal-link
         data-deal-id={deal.id}

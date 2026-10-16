@@ -1,0 +1,32 @@
+---
+import '@fontsource-variable/plus-jakarta-sans';
+import '@fontsource-variable/bricolage-grotesque';
+import '../styles/global.css';
+import { SITE, absoluteUrl } from '../config/site';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical: string;
+}
+const { title, description, canonical } = Astro.props;
+---
+
+<!doctype html>
+<html lang="tr" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{`${title} | ${SITE.name}`}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <link rel="canonical" href={absoluteUrl(canonical)} />
+    <meta name="theme-color" content={SITE.themeColor} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <slot name="head" />
+  </head>
+  <body class="min-h-dvh bg-[radial-gradient(900px_420px_at_50%_-10%,#ffe4d1_0%,transparent_60%),linear-gradient(#fff,#f7f5f2)]">
+    <slot />
+  </body>
+</html>

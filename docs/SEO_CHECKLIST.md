@@ -31,6 +31,10 @@
 | `/kategori/<slug>/` (+ `/sayfa/N/`) | category has deals |
 | `/kategori/<slug>/<city>/` | generated only with ≥ 4 deals |
 | `/sehir/<city>/` | ≥ 3 deals (8 featured cities always exist, noindex while thin) |
+| `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | generated from ≥ 3 (city×tag ≥ 4) deals, indexed from ≥ 5 |
+| `/etiket/<tag>/` | generated from ≥ 5 deals, indexed from ≥ 8 |
+| `/sehirler/` | at least one deal |
+| `/git/<slug>/` (transition page) | never (noindex, nofollow, robots Disallow) |
 | `/rehber/`, `/rehber/<slug>/` | always |
 | legal/info pages, `/iletisim/`, `/bulten/` | always |
 | `/arama/`, `/iletisim/tesekkurler/`, `/bulten/onay/`, `/404` | never |

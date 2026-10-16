@@ -110,6 +110,7 @@ export const CANDIDATE_KEYS: Record<FieldName, string[]> = {
     'image.url',
     'media.0.url',
   ],
+  images: ['dealImages', 'images', 'gallery', 'photos'],
   imageLargeUrl: ['image1200x1200', 'imageLarge', 'largeImage', 'image_large'],
   sourceUrl: ['showDealUrl', 'url', 'link', 'dealUrl', 'deal_url', 'detailUrl', 'pageUrl', 'href', 'landingUrl', 'permalink', 'adres'],
   affiliateUrl: [

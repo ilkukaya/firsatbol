@@ -167,6 +167,7 @@ async function loadEditorialDeals(now: Date): Promise<Deal[]> {
       discountSource: discount.source,
       imageUrl: data.imageUrl ?? null,
       imageLargeUrl: null,
+      images: data.imageUrl ? [data.imageUrl] : [],
       sourceUrl: data.sourceUrl,
       affiliateUrl: data.affiliateUrl ?? null,
       trackingStatus: data.affiliateUrl ? 'provider-tracked' : 'none',

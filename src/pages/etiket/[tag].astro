@@ -1,0 +1,43 @@
+---
+import type { GetStaticPaths } from 'astro';
+import FacetView from '../../components/FacetView.astro';
+import { getDeals } from '../../lib/deals/repository';
+import { TAG_MIN_INDEX, facetsOf, type Facet } from '../../lib/deals/facets';
+
+/** Türkiye-wide sub-category pages, e.g. /etiket/masaj/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return facetsOf(deals).tags.map((tag) => ({ params: { tag: tag.slug }, props: { tag } }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  tag: Facet;
+}
+const { tag } = Astro.props;
+const { deals } = await getDeals();
+const { citySegments } = facetsOf(deals);
+const cityLinks = citySegments
+  .filter((page) => page.kind === 'tag' && page.slug === tag.slug)
+  .sort((a, b) => b.deals.length - a.deals.length)
+  .slice(0, 24)
+  .map((page) => ({ href: `/sehir/${page.citySlug}/${page.slug}/`, label: page.cityName, count: page.deals.length }));
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Tüm fırsatlar', path: '/firsatlar/' },
+  { name: tag.name, path: `/etiket/${tag.slug}/` },
+];
+---
+
+<FacetView
+  title={`${tag.name} Fırsatları ve Kampanyaları`}
+  heading={`${tag.name} fırsatları`}
+  eyebrow="Alt kategori"
+  description={`${tag.name} fırsatları: ${tag.deals.length} güncel kampanya. Fiyat, konum ve kullanım koşullarını karşılaştırın; satıcının sayfasına güvenle geçin.`}
+  deals={tag.deals}
+  crumbs={crumbs}
+  canonical={`/etiket/${tag.slug}/`}
+  noindex={tag.deals.length < TAG_MIN_INDEX}
+  links={[{ title: 'Şehirlere göre', items: cityLinks }]}
+  searchTerm={tag.name}
+  placement={`tag-${tag.slug}`}
+/>

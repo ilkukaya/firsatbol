@@ -41,7 +41,6 @@ export function toIndexEntry(deal: Deal): DealIndexEntry {
     dp: deal.discountPercent,
     cur: deal.currency,
     img: deal.imageUrl,
-    u: deal.affiliateUrl ?? deal.sourceUrl,
     pv: deal.provider,
     pn: deal.providerName,
     vu: deal.validUntil,

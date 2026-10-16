@@ -36,7 +36,9 @@ Verified against real responses with the owner's credentials:
 | Page size | `itemInPage=<n>`, max 100 (default 10) — provided by the owner from the dashboard |
 | Pagination | `p=<n>`; **max 20 distinct pages per query**, later pages repeat the last one → 2 000 deals with 100/page |
 | Province filter | `cityId=<1–81>` (partner's own ids, roughly Turkish alphabetical: 1 Adana, 7 Ankara, 8 Antalya, 21 Bursa, 32 Eskişehir, 41 İstanbul, 42 İzmir, 53 Kocaeli, 59 Muğla; 82 = all) |
-| District filter | `townId=<id>` (ids not enumerated; wrong ids return 0 results) |
+| District filter | `townId=<id>` (İstanbul ids supplied by the owner, e.g. 53 Kadıköy, 132 Beşiktaş, 135 Bakırköy). Results also include nearby districts. |
+| Tag filter | `tagIds[]=<id>` (e.g. 12 masaj, 26 spa, 21 hamam, 126 sauna, 514 kese, 2045 köpük masajı) |
+| Subset check | district/tag queries return **only deals already in the full catalog** (verified) — so district and sub-category pages are built from each deal's own `town` and `tags`; no extra requests needed |
 | Result order per province | local deals first, then the ~78 nationwide deals (empty `city`); single nationwide deals can appear mid-list |
 | Tracking | `showDealUrl`/`buyDealUrl` carry `pid=<publisherId>` |
 | Etkinlik API | `/deal/event-deals.html` (same auth, `cityId`, `itemInPage`, `p`) → `{ result, page, itemInPage, total, events: [...] }`, one record per **session**: `dealId`, `subDealId`, `eventTitle`, `eventDate`, `realPrice`, `dealPrice`, `businessTitle/Address/Town/City`, `dealUrl` (pid), `image400x400`, `image1200x1200`; pages beyond the end omit `events` |
@@ -69,6 +71,24 @@ Measured 2026-10-16: **39 requests, ~30 s, 1 944 deals, 550 with an event calend
    (Etkinlik API page) or `npm run provider:inspect -- --sweep` (full import with category/city statistics).
    In restricted sandboxes prefix with `NODE_USE_ENV_PROXY=1`.
 4. Confirm clicks in Günlük Raporlar → set `FIRSATBUFIRSAT_TRACKING_VERIFIED=true`.
+
+### District & sub-category pages
+
+Derived at build time (`src/lib/deals/facets.ts`) from every deal's `town` and `tags`:
+`/sehir/<il>/<ilçe>/`, `/sehir/<il>/<alt-kategori>/`, `/sehir/<il>/<ilçe>/<alt-kategori>/`, `/etiket/<alt-kategori>/`.
+Generated from ≥ 3 deals (tags: ≥ 5, city×tag: ≥ 4), indexed from ≥ 5 (tags: ≥ 8). Measured: 79 districts,
+267 sub-categories, ~1 100 combination pages, 1 011 sitemap URLs.
+
+### Images
+
+`dealImages` (up to 16 per deal, average ~6) is shown as a swipeable gallery on the detail page; only the first image
+loads eagerly. Cards use `image450_H` (400×400).
+
+### Transition page
+
+Every "Fırsatı Gör" button opens `/git/<slug>/`: deal summary, destination host, a 3-second countdown with
+"Hemen fırsata git" / "Vazgeç", and the partner's referral URL unchanged (`rel="sponsored"`). `noindex, nofollow`,
+`Disallow: /git/` in robots.txt, never in the sitemap. Works without JavaScript (meta refresh in `<noscript>`).
 
 ### Tracking / attribution
 

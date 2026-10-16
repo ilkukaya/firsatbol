@@ -3,6 +3,7 @@ import { CATEGORIES } from '../config/categories';
 import { getDeals } from './deals/repository';
 import { categoryCityCombos } from './deals/pages';
 import { MIN_CITY_INDEX, categoryCounts, citiesWithDeals } from './deals/taxonomy';
+import { FACET_MIN_INDEX, TAG_MIN_INDEX, facetsOf } from './deals/facets';
 
 export interface SitemapEntry {
   path: string;
@@ -22,6 +23,13 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
     if ((counts.get(category.slug) ?? 0) > 0) entries.push({ path: `/kategori/${category.slug}/`, lastmod: day });
   for (const combo of categoryCityCombos(deals)) entries.push({ path: `/kategori/${combo.category}/${combo.city}/`, lastmod: day });
   for (const city of citiesWithDeals(deals)) if (city.count >= MIN_CITY_INDEX) entries.push({ path: `/sehir/${city.slug}/`, lastmod: day });
+  const facets = facetsOf(deals);
+  for (const tag of facets.tags) if (tag.deals.length >= TAG_MIN_INDEX) entries.push({ path: `/etiket/${tag.slug}/`, lastmod: day });
+  for (const page of facets.citySegments)
+    if (page.deals.length >= FACET_MIN_INDEX) entries.push({ path: `/sehir/${page.citySlug}/${page.slug}/`, lastmod: day });
+  for (const page of facets.districtTags)
+    if (page.deals.length >= FACET_MIN_INDEX)
+      entries.push({ path: `/sehir/${page.citySlug}/${page.districtSlug}/${page.slug}/`, lastmod: day });
   for (const deal of deals) if (deal.indexable) entries.push({ path: `/firsat/${deal.slug}/`, lastmod: deal.lastCheckedAt.slice(0, 10) });
 
   const guides = await getCollection('guides', (entry) => !entry.data.draft);

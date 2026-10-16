@@ -18,7 +18,7 @@ export default defineConfig({
     ...(executablePath ? { launchOptions: { executablePath } } : {}),
   },
   webServer: [
-    { command: 'npx astro preview --port 4321', port: 4321, reuseExistingServer: true, timeout: 60_000 },
+    { command: 'npx serve dist -l 4321 --no-clipboard', port: 4321, reuseExistingServer: true, timeout: 60_000 },
     { command: 'npx serve dist-empty -l 4322 --no-clipboard', port: 4322, reuseExistingServer: true, timeout: 60_000 },
   ],
   projects: [

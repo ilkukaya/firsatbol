@@ -11,6 +11,7 @@ import { getDeals } from '../../lib/deals/repository';
 import { MIN_CITY_INDEX, MIN_COMBO_PAGE, citiesWithDeals, countBy, type CityEntry } from '../../lib/deals/taxonomy';
 import { sortEntries, toIndexEntry } from '../../lib/deals/query';
 import { breadcrumbJsonLd } from '../../lib/seo';
+import { facetsOf } from '../../lib/deals/facets';
 
 export const getStaticPaths = (async () => {
   const { deals } = await getDeals();
@@ -26,6 +27,14 @@ const byId = new Map(deals.map((deal) => [deal.id, deal]));
 const cityDeals = sortEntries(deals.filter((deal) => deal.citySlug === city.slug).map(toIndexEntry)).map((entry) => byId.get(entry.id)!);
 const shown = cityDeals.slice(0, 48);
 const perCategory = countBy(cityDeals, (deal) => deal.category);
+const { citySegments } = facetsOf(deals);
+const districtLinks = citySegments
+  .filter((page) => page.citySlug === city.slug && page.kind === 'district')
+  .sort((a, b) => b.deals.length - a.deals.length);
+const tagLinks = citySegments
+  .filter((page) => page.citySlug === city.slug && page.kind === 'tag')
+  .sort((a, b) => b.deals.length - a.deals.length)
+  .slice(0, 24);
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
   { name: 'Şehirler', path: '/firsatlar/' },
@@ -72,6 +81,36 @@ const intro =
             );
           })}
         </ul>
+      )}
+      {districtLinks.length > 0 && (
+        <nav aria-label="İlçeler" class="mt-6">
+          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">İlçeler</p>
+          <ul class="flex flex-wrap gap-2">
+            {districtLinks.map((page) => (
+              <li>
+                <a href={`/sehir/${city.slug}/${page.slug}/`} class="chip">
+                  <Icon name="pin" size={14} class="text-brand-text" />
+                  {page.name} <span class="text-xs text-muted">{page.deals.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+      {tagLinks.length > 0 && (
+        <nav aria-label="Alt kategoriler" class="mt-5">
+          <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">Alt kategoriler</p>
+          <ul class="flex flex-wrap gap-2">
+            {tagLinks.map((page) => (
+              <li>
+                <a href={`/sehir/${city.slug}/${page.slug}/`} class="chip">
+                  <Icon name="tag" size={14} class="text-brand-text" />
+                  {page.name} <span class="text-xs text-muted">{page.deals.length}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       )}
     </div>
   </section>

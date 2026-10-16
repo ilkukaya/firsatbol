@@ -30,7 +30,7 @@
    "buyDealUrl": "",
    "image200_H": "",
    "image450_H": "",
-   "image1200x1200": "",
+   "image1200x1200": "https://example.com/img/1001-1.jpg",
    "tags": "yeme i̇çme",
    "subDeals": [
     {
@@ -40,7 +40,10 @@
      "dealPriceWithSymbol": "780 ₺"
     }
    ],
-   "dealImages": []
+   "dealImages": [
+    "https://example.com/img/1001-2.jpg",
+    "https://example.com/img/1001-3.jpg"
+   ]
   },
   {
    "id": "1002",
