@@ -4,10 +4,13 @@ import { getCollection, render } from 'astro:content';
 import ProseLayout from '../../layouts/ProseLayout.astro';
 import DealGrid from '../../components/DealGrid.astro';
 import GuideCard from '../../components/GuideCard.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
 import Icon from '../../components/Icon.astro';
 import AttributionNotice from '../../components/AttributionNotice.astro';
 import { getCategory } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
+import { citiesWithDeals } from '../../lib/deals/taxonomy';
+import { TOPICS } from '../../config/taxonomy';
 import { readingMinutes } from '../../lib/content';
 import { formatDate } from '../../lib/format';
 import { articleJsonLd } from '../../lib/seo';
@@ -22,7 +25,28 @@ const { Content } = await render(entry);
 const path = `/rehber/${entry.id}/`;
 const minutes = readingMinutes(entry.body ?? '');
 const { deals } = await getDeals();
-const related = deals.filter((deal) => entry.data.relatedCategories.includes(deal.category)).slice(0, 3);
+const { relatedTopics, relatedCity, relatedCategories } = entry.data;
+// live deals of the guide's topics (and city), else of its categories
+const inScope = (deal: (typeof deals)[number]) => !relatedCity || deal.citySlug === relatedCity;
+const byTopic = relatedTopics.length
+  ? deals.filter((deal) => inScope(deal) && deal.topics.some((slug) => relatedTopics.includes(slug)))
+  : [];
+const related = (byTopic.length ? byTopic : deals.filter((deal) => inScope(deal) && relatedCategories.includes(deal.category)))
+  .slice()
+  .sort(
+    (a, b) =>
+      Number(b.discountPercent !== null) - Number(a.discountPercent !== null) || Number(Boolean(b.imageUrl)) - Number(Boolean(a.imageUrl)),
+  )
+  .slice(0, 6);
+const city = relatedCity ? citiesWithDeals(deals).find((c) => c.slug === relatedCity) : undefined;
+const topicLinks = relatedTopics
+  .map((slug) => TOPICS.get(slug))
+  .filter((topic) => topic !== undefined)
+  .map((topic) => ({
+    name: city ? `${city.name} ${topic.name.toLocaleLowerCase('tr-TR')}` : topic.name,
+    href: city ? `/sehir/${city.slug}/${topic.slug}/` : `/etiket/${topic.slug}/`,
+  }));
+const allHref = topicLinks[0]?.href;
 const otherGuides = (await getCollection('guides', (other) => !other.data.draft && other.id !== entry.id)).slice(0, 3);
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
@@ -76,8 +100,14 @@ const crumbs = [
   </Fragment>
   <Content />
   <Fragment slot="after">
-    {entry.data.relatedCategories.length > 0 && (
+    {(topicLinks.length > 0 || entry.data.relatedCategories.length > 0) && (
       <nav class="mt-10 flex flex-wrap gap-2" aria-label="İlgili kategoriler">
+        {topicLinks.map((link) => (
+          <a href={link.href} class="chip">
+            <Icon name="tag" size={15} class="text-brand-text" />
+            {link.name} fırsatları
+          </a>
+        ))}
         {entry.data.relatedCategories.map((slug) => {
           const category = getCategory(slug);
           return (
@@ -95,9 +125,11 @@ const crumbs = [
   <div slot="below" class="pb-4">
     {related.length > 0 && (
       <section class="mt-6" aria-labelledby="ilgili-firsatlar">
-        <h2 id="ilgili-firsatlar" class="section-title mb-6">
-          İlgili fırsatlar
-        </h2>
+        <SectionHeader
+          id="ilgili-firsatlar"
+          title={topicLinks[0] ? `Güncel ${topicLinks[0].name.toLocaleLowerCase('tr-TR')} fırsatları` : 'İlgili fırsatlar'}
+          {...(allHref ? { href: allHref, linkLabel: 'Tümünü gör' } : {})}
+        />
         <DealGrid deals={related} placement="guide-related" columns={3} />
         <AttributionNotice deals={related} class="mt-6" />
       </section>

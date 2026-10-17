@@ -138,7 +138,7 @@ test('filter menus keep long link lists out of the way until opened', async ({ p
 
 test('sharing: WhatsApp message, tagged links and a price-first link preview', async ({ page }) => {
   await page.goto('/firsat/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
-  const whatsapp = page.getByRole('link', { name: 'WhatsApp’ta paylaş' }).last();
+  const whatsapp = page.getByRole('link', { name: 'WhatsApp’ta paylaş', exact: true }).last();
   await expect(whatsapp).toBeVisible();
   const text = decodeURIComponent((await whatsapp.getAttribute('href'))!.split('text=')[1]!);
   expect(text).toMatch(/^FırsatBol’da bak ne buldum! 👀\nBu fırsatı kaçırmaman için seninle paylaşıyorum:\n\n🔥 %35 indirim · /);
@@ -153,6 +153,48 @@ test('sharing: WhatsApp message, tagged links and a price-first link preview', a
     /\/og\/firsat\/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001-[a-z0-9]+\.jpg$/,
   );
   await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
+});
+
+test('deal cards share to WhatsApp in one tap', async ({ page }) => {
+  await page.goto('/sehir/istanbul/');
+  const share = page.getByRole('link', { name: /^WhatsApp’ta paylaş: / }).first();
+  await expect(share).toBeVisible();
+  const text = decodeURIComponent((await share.getAttribute('href'))!.split('text=')[1]!);
+  expect(text).toMatch(/^FırsatBol’da bak ne buldum! 👀\n/);
+  expect(text).toMatch(/👉 https:\/\/[^ ]+\/firsat\/[^/]+\/\?utm_source=whatsapp/);
+  // the share button sits above the card's full-size link
+  await share.click({ trial: true });
+});
+
+test('sort and price range re-order the whole scope and live in the URL', async ({ page }) => {
+  await page.goto('/sehir/istanbul/');
+  const tools = page.locator('[data-scope-tools]');
+  await expect(tools).toBeVisible();
+  await tools.locator('select[name="sirala"]').selectOption('fiyat-artan');
+  await expect(page).toHaveURL(/sirala=fiyat-artan/);
+  const prices = page.locator('[data-scope-results] article .text-xl');
+  await expect(prices.first()).toHaveText('320\u00a0TL');
+  await tools.getByText('500–1.000 TL').click();
+  await expect(page).toHaveURL(/fiyat=500-1000/);
+  await expect(page.locator('[data-scope-count]')).toContainText('2 fırsat');
+  await expect(prices).toHaveText(['780\u00a0TL', '990\u00a0TL']);
+  // a shared link restores the choice; "Tüm fiyatlar" + "Önerilen" brings back the static page
+  await page.goto('/sehir/istanbul/?fiyat=250-500');
+  await expect(prices).toHaveText(['320\u00a0TL']);
+  // only bands with deals are offered
+  await expect(tools.getByText('250 TL altı')).toHaveCount(0);
+  await tools.getByText('Tüm fiyatlar').click();
+  await expect(page.locator('[data-scope-results] article')).toHaveCount(4);
+  await expect(page).toHaveURL(/\/sehir\/istanbul\/$/);
+});
+
+test('city pages show Türkiye-wide deals, which have their own page', async ({ page }) => {
+  await page.goto('/sehir/istanbul/');
+  const block = page.locator('section[aria-labelledby="turkiye-geneli"]');
+  await expect(block).toBeVisible();
+  await block.getByRole('link', { name: /Tüm 1 fırsat/ }).click();
+  await expect(page).toHaveURL(/\/turkiye-geneli\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Türkiye geneli fırsatlar');
 });
 
 test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {

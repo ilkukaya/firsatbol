@@ -3,6 +3,9 @@ import Icon from './Icon.astro';
 import { getCategory } from '../config/categories';
 import { formatDate, formatPrice, formatSession } from '../lib/format';
 import type { Deal } from '../lib/deals/schema';
+import { SITE } from '../config/site';
+import { shareMessage, shareUrl } from '../lib/share';
+import { ogCard, ogImagePath } from '../lib/og';
 
 interface Props {
   deal: Deal;
@@ -16,6 +19,8 @@ const Heading = headingLevel;
 const category = getCategory(deal.category);
 const location = [deal.district, deal.city].filter(Boolean).join(', ');
 const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price;
+// one tap from the list straight into WhatsApp (same message as the deal page's share block)
+const whatsapp = `https://wa.me/?text=${encodeURIComponent(shareMessage(deal, shareUrl(SITE.url, deal.slug, 'whatsapp')))}`;
 ---
 
 <article
@@ -44,6 +49,18 @@ const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.
         %{deal.discountPercent} indirim
       </span>
     )}
+    <a
+      href={whatsapp}
+      target="_blank"
+      rel="noopener"
+      class="card-share"
+      aria-label={`WhatsApp’ta paylaş: ${deal.title}`}
+      title="WhatsApp’ta paylaş"
+      data-card-share
+      data-deal-id={deal.id}
+      data-share-card={ogImagePath(deal.slug, ogCard(deal))}
+      data-placement={placement}
+    ></a>
     <span data-expired-note class="absolute inset-x-0 bottom-0 hidden bg-ink/85 py-1.5 text-center text-sm font-semibold text-white">
       Süresi doldu
     </span>

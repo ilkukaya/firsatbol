@@ -1,0 +1,37 @@
+---
+/** /turkiye-geneli/: deals without a city (stays, tours, shipped products) and its /sayfa/<n>/ pages. */
+import FacetView from './FacetView.astro';
+import { getDeals } from '../lib/deals/repository';
+import { nationwideDeals } from '../lib/deals/pages';
+import { FACET_MIN_INDEX, facetsOf, topicLinkGroups } from '../lib/deals/facets';
+
+interface Props {
+  page: number;
+}
+const { page } = Astro.props;
+const { deals } = await getDeals();
+const all = nationwideDeals(deals);
+const tagPages = new Set(facetsOf(deals).tags.map((tag) => tag.slug));
+const tree = topicLinkGroups(all, tagPages, (slug) => `/etiket/${slug}/`, { maxDepth: 1 });
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Şehirler', path: '/sehirler/' },
+  { name: 'Türkiye geneli', path: '/turkiye-geneli/' },
+];
+---
+
+<FacetView
+  title="Türkiye Geneli Fırsatlar: Otel, Tur ve Ürün Kampanyaları"
+  heading="Türkiye geneli fırsatlar"
+  eyebrow={`Şehirden bağımsız · ${all.length} güncel fırsat`}
+  description={`Belirli bir şehre bağlı olmayan ${all.length} güncel fırsat: konaklama, tur ve ürün kampanyaları. Fiyat, seçenek ve koşulları karşılaştırın.`}
+  lead="İş ortaklarımızın belirli bir şehre bağlamadığı fırsatlar burada: farklı şehirlerdeki otel konaklamaları, turlar ve kargoyla gelen ürünler. Konaklama ve turlarda tesisin yeri ile kalkış noktası fırsat sayfasında yazar."
+  deals={all}
+  crumbs={crumbs}
+  canonical="/turkiye-geneli/"
+  noindex={all.length < FACET_MIN_INDEX}
+  quick={tree.flatMap((group) => group.items)}
+  placement="nationwide"
+  page={page}
+  emptyText="Şu anda şehirden bağımsız yayında bir fırsat bulunmuyor."
+/>

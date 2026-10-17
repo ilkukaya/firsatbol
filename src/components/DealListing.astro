@@ -1,11 +1,12 @@
 ---
+import CardTemplates from './CardTemplates.astro';
 import DealCard from './DealCard.astro';
 import EmptyDeals from './EmptyDeals.astro';
 import Icon from './Icon.astro';
 import Pagination from './Pagination.astro';
 import { CATEGORIES } from '../config/categories';
 import type { Deal } from '../lib/deals/schema';
-import { SORT_OPTIONS, merchantKey } from '../lib/deals/query';
+import { NATIONWIDE, PRICE_RANGES, SORT_OPTIONS, inPriceRange, merchantKey } from '../lib/deals/query';
 import { categoryCounts, citiesWithDeals, merchantsOf } from '../lib/deals/taxonomy';
 
 interface Props {
@@ -24,29 +25,17 @@ const { deals, pageDeals, page, totalPages, base, placement, alwaysRender = fals
 const counts = categoryCounts(deals);
 const cities = citiesWithDeals(deals).filter((city) => city.count > 0);
 const merchants = merchantsOf(deals).slice(0, 80);
+const nationwide = deals.filter((deal) => !deal.citySlug).length;
+const priceRanges = PRICE_RANGES.map((range) => ({
+  ...range,
+  count: deals.filter((deal) => inPriceRange(deal.price, range.value)).length,
+})).filter((range) => range.count > 0);
 const categoryNames = Object.fromEntries(CATEGORIES.map((category) => [category.slug, category.shortName]));
 const query = Astro.url.searchParams.get('q') ?? '';
 ---
 
 <div data-listing={placement} data-categories={JSON.stringify(categoryNames)} data-always-render={alwaysRender ? 'true' : 'false'}>
-  {/* icon templates for client-rendered cards */}
-  <template data-icon="pin">
-    <Icon name="pin" size={14} />
-  </template>
-  <template data-icon="clock">
-    <Icon name="clock" size={14} />
-  </template>
-  <template data-icon="calendar">
-    <Icon name="calendar" size={14} />
-  </template>
-  <template data-icon="external">
-    <Icon name="external" size={15} />
-  </template>
-  {CATEGORIES.map((category) => (
-    <template data-icon={`cat-${category.slug}`}>
-      <Icon name={category.icon} size={44} strokeWidth={1.5} />
-    </template>
-  ))}
+  <CardTemplates />
 
   <form
     action={placement === 'search' ? '/arama/' : '/firsatlar/'}
@@ -55,7 +44,7 @@ const query = Astro.url.searchParams.get('q') ?? '';
     data-filter-form
     role="search"
   >
-    <div class="grid gap-3 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr_auto] lg:items-end">
+    <div class="grid gap-3 lg:grid-cols-[1.4fr_repeat(5,minmax(0,1fr))_auto] lg:items-end">
       <div>
         <label for="f-q" class="label">
           Ara
@@ -103,6 +92,7 @@ const query = Astro.url.searchParams.get('q') ?? '';
           </label>
           <select id="f-sehir" name="sehir" class="field">
             <option value="">Tümü</option>
+            {nationwide > 0 && <option value={NATIONWIDE}>Türkiye geneli ({nationwide})</option>}
             {cities.map((city) => (
               <option value={city.slug}>
                 {city.name} ({city.count})
@@ -119,6 +109,19 @@ const query = Astro.url.searchParams.get('q') ?? '';
             {merchants.map((merchant) => (
               <option value={merchantKey(merchant.name)}>
                 {merchant.name} ({merchant.count})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label for="f-fiyat" class="label">
+            Fiyat
+          </label>
+          <select id="f-fiyat" name="fiyat" class="field">
+            <option value="">Tümü</option>
+            {priceRanges.map((range) => (
+              <option value={range.value}>
+                {range.label} ({range.count})
               </option>
             ))}
           </select>
@@ -182,7 +185,7 @@ const query = Astro.url.searchParams.get('q') ?? '';
   const toggle = document.querySelector<HTMLButtonElement>('[data-filter-toggle]');
   const panel = document.querySelector<HTMLElement>('[data-filter-panel]');
   if (toggle && panel) {
-    const hasFilters = ['kategori', 'sehir', 'magaza', 'sirala'].some((key) => new URLSearchParams(location.search).has(key));
+    const hasFilters = ['kategori', 'sehir', 'magaza', 'fiyat', 'sirala'].some((key) => new URLSearchParams(location.search).has(key));
     const setOpen = (open: boolean) => {
       toggle.setAttribute('aria-expanded', String(open));
       panel.classList.toggle('max-lg:hidden', !open);

@@ -2,11 +2,17 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AttributionNotice from './AttributionNotice.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
-import DealGrid from './DealGrid.astro';
+import ScopedDeals from './ScopedDeals.astro';
+import EmptyDeals from './EmptyDeals.astro';
+import NationwideDeals from './NationwideDeals.astro';
+import GuideCard from './GuideCard.astro';
 import FilterBar from './FilterBar.astro';
 import { CATEGORIES } from '../config/categories';
 import type { Deal } from '../lib/deals/schema';
-import { FACET_PAGE_LIMIT, type LinkGroup, type LinkItem } from '../lib/deals/facets';
+import type { LinkGroup, LinkItem } from '../lib/deals/facets';
+import { FACET_PAGE_SIZE, paginate } from '../lib/deals/query';
+import { readingMinutes } from '../lib/content';
+import type { CollectionEntry } from 'astro:content';
 import { countBy } from '../lib/deals/taxonomy';
 import { breadcrumbJsonLd, itemListJsonLd, type Crumb } from '../lib/seo';
 
@@ -25,9 +31,15 @@ interface Props {
   quick?: LinkItem[];
   /** Dropdown menus holding the full link lists (districts, categories…). */
   menus?: { label: string; icon: 'pin' | 'tag' | 'filter'; groups: LinkGroup[] }[];
-  /** Search term for "see all" when the list is truncated. */
-  searchTerm?: string | undefined;
   placement: string;
+  /** Page number (page n > 1 lives at `${canonical}sayfa/n/`). */
+  page?: number;
+  /** Related guides shown below the list (first page only). */
+  guides?: CollectionEntry<'guides'>[];
+  /** Show the Türkiye-wide deals block (city pages). */
+  nationwide?: boolean;
+  /** Empty-state sentence when the scope has no deals. */
+  emptyText?: string;
 }
 const {
   title,
@@ -41,10 +53,15 @@ const {
   noindex,
   quick = [],
   menus = [],
-  searchTerm,
   placement,
+  page = 1,
+  guides = [],
+  nationwide = false,
+  emptyText,
 } = Astro.props;
-const shown = deals.slice(0, FACET_PAGE_LIMIT);
+const { items: shown, totalPages } = paginate(deals, page, FACET_PAGE_SIZE);
+const path = page > 1 ? `${canonical}sayfa/${page}/` : canonical;
+const pagedCrumbs = page > 1 ? [...crumbs, { name: `Sayfa ${page}`, path }] : crumbs;
 
 // factual summary from the data itself (no invented claims)
 const byCategory = [...countBy(deals, (deal) => deal.category).entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -67,12 +84,12 @@ const summary = [
 ---
 
 <BaseLayout
-  title={title}
-  description={description}
-  canonical={canonical}
+  title={page > 1 ? `${title} — Sayfa ${page}` : title}
+  description={page > 1 ? `${description} Sayfa ${page}/${totalPages}.` : description}
+  canonical={path}
   noindex={noindex}
   jsonLd={[
-    breadcrumbJsonLd(crumbs),
+    breadcrumbJsonLd(pagedCrumbs),
     ...(shown.length
       ? [
           itemListJsonLd(
@@ -85,27 +102,47 @@ const summary = [
 >
   <section class="border-b border-line bg-white">
     <div class="container-page py-6 sm:py-8">
-      <Breadcrumbs crumbs={crumbs} />
+      <Breadcrumbs crumbs={pagedCrumbs} />
       <div class="mt-5 max-w-3xl">
         <p class="eyebrow mb-2">{eyebrow}</p>
-        <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">{heading}</h1>
-        <p class="mt-4 line-clamp-3 text-[1.05rem] leading-relaxed text-ink-2 sm:line-clamp-none" data-clamp>
-          {lead && <>{lead} </>}
-          {summary}
-        </p>
+        <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">
+          {heading}
+          {page > 1 && <span class="text-muted"> · Sayfa {page}</span>}
+        </h1>
+        {page === 1 && (
+          <p class="mt-4 line-clamp-3 text-[1.05rem] leading-relaxed text-ink-2 sm:line-clamp-none" data-clamp>
+            {lead && <>{lead} </>}
+            {summary}
+          </p>
+        )}
       </div>
       <FilterBar quick={quick} menus={menus} />
     </div>
   </section>
 
   <div class="container-page pb-10 pt-6">
-    <DealGrid deals={shown} placement={placement} eagerCount={2} />
-    {deals.length > shown.length && (
-      <div class="mt-8 text-center">
-        <a href={searchTerm ? `/arama/?q=${encodeURIComponent(searchTerm)}` : '/firsatlar/'} class="btn-ghost">
-          Tüm {deals.length.toLocaleString('tr-TR')} fırsatı gör
-        </a>
-      </div>
+    {deals.length > 0 ? (
+      <ScopedDeals deals={deals} page={page} pageSize={FACET_PAGE_SIZE} base={canonical} placement={placement} />
+    ) : (
+      <EmptyDeals {...(emptyText ? { context: emptyText } : {})} />
+    )}
+    {nationwide && page === 1 && <NationwideDeals />}
+    {guides.length > 0 && page === 1 && (
+      <section class="mt-14" aria-labelledby="ilgili-rehberler">
+        <h2 id="ilgili-rehberler" class="section-title mb-6">
+          İlgili rehberler
+        </h2>
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {guides.slice(0, 3).map((guide) => (
+            <GuideCard
+              title={guide.data.title}
+              description={guide.data.description}
+              href={`/rehber/${guide.id}/`}
+              minutes={readingMinutes(guide.body ?? '')}
+            />
+          ))}
+        </div>
+      </section>
     )}
     <AttributionNotice deals={deals} class="mt-10" />
   </div>

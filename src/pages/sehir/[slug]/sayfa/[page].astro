@@ -1,0 +1,24 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CityPageView from '../../../../components/CityPageView.astro';
+import { getDeals } from '../../../../lib/deals/repository';
+import { laterPages } from '../../../../lib/deals/pages';
+import { FACET_PAGE_SIZE } from '../../../../lib/deals/query';
+import { citiesWithDeals, type CityEntry } from '../../../../lib/deals/taxonomy';
+
+/** /sehir/<city>/sayfa/<n>/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return citiesWithDeals(deals).flatMap((city) =>
+    laterPages(city.count, FACET_PAGE_SIZE).map((page) => ({ params: { slug: city.slug, page: String(page) }, props: { city, page } })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  city: CityEntry;
+  page: number;
+}
+const { city, page } = Astro.props;
+---
+
+<CityPageView city={city} page={page} />

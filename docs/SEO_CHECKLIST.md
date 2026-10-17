@@ -13,16 +13,20 @@
       place) drawn on demand by `netlify/functions/og.mts` at `/og/firsat/<slug>-<version>.jpg` (JPEG ~80 KB) from the bundled `/data/og.json`,
       cached by the CDN for a year (the version changes with the price); on any error it redirects to the deal photo
 - [x] Share buttons on deal pages (WhatsApp first, Telegram, X, Facebook, copy, native share) with `utm_source`
-      per channel and a `deal_share` analytics event
+      per channel and a `deal_share` analytics event; every deal card has a one-tap WhatsApp button (`placement: card-whatsapp`)
 - [x] JSON-LD: Organization (name/url/logo only), WebSite + SearchAction, BreadcrumbList, ItemList, Article (guides).
       **No** Offer/Product/Review/AggregateRating markup — we are not the seller and do not fabricate ratings.
 - [x] Breadcrumbs (visible + structured), including category-tree ancestors (İstanbul › Masaj › Spa › Hamam)
 - [x] Internal linking: header categories, city chips, category ↔ city ↔ deal ↔ guide cross-links, related deals
-- [x] Pagination with crawlable `<a>` links (`/firsatlar/sayfa/2/`), 301 from `/sayfa/1/`
+- [x] Pagination with crawlable `<a>` links (`/firsatlar/sayfa/2/`, `/kategori/…/sayfa/2/` 24 per page; city,
+      district, sub-category and `/turkiye-geneli/` pages 48 per page at `…/sayfa/2/`), self-canonical, 301 from `/sayfa/1/`
+- [x] Sort (önerilen, en yeni, fiyat, indirim, bitiş, seans) and price bands on every list page: JS-only, re-sorts the
+      whole scope from `/data/deals.json`, state in `?sirala=&fiyat=` (canonical stays the base page)
 - [x] Static HTML for all content (works without JS); JS only enhances filters/search
 - [x] Image `width/height`, lazy loading below the fold, `fetchpriority` for LCP candidates
 - [x] Self-hosted variable fonts (latin + latin-ext subsets), no render-blocking third parties
-- [x] Six original Turkish guides (~950 words each), legal and trust pages
+- [x] Twelve original Turkish guides (shopping basics + masaj, kahvaltı İstanbul, tiyatro, tur, güzellik, otel), linked
+      from their category/city pages with live deals of their topic, legal and trust pages
 - [x] Verification meta tags via env: `PUBLIC_GOOGLE_SITE_VERIFICATION`, `PUBLIC_BING_SITE_VERIFICATION`, `PUBLIC_YANDEX_VERIFICATION`
 
 ## Route map
@@ -38,6 +42,8 @@
 | `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | districts and category-tree nodes from 1 deal, plain tags from 4 (city) / 3 (district); indexed from ≥ 5 |
 | `/etiket/<tag>/` | category-tree node: generated from 1, indexed from ≥ 5; plain tag: generated from ≥ 5, indexed from ≥ 8 |
 | `/sehirler/` | at least one deal |
+| `/turkiye-geneli/` (+ `/sayfa/N/`) | deals without a city (stays, tours, shipped products); indexed from ≥ 5 |
+| `…/sayfa/N/` of city, district, sub-category pages | same rule as page 1 |
 | `/git/<slug>/` (transition page) | never (noindex, nofollow, robots Disallow) |
 | `/rehber/`, `/rehber/<slug>/` | always |
 | legal/info pages, `/iletisim/`, `/bulten/` | always |

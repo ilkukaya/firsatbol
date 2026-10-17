@@ -1,0 +1,110 @@
+---
+/**
+ * The deal list of a category, city, district or sub-category page: one static page of cards
+ * (crawlable, works without JS) with numbered pagination, plus a sort and price-range bar. With JS
+ * the bar re-sorts/filters every deal of the page's scope (all its pages) from /data/deals.json.
+ */
+import CardTemplates from './CardTemplates.astro';
+import DealGrid from './DealGrid.astro';
+import Icon from './Icon.astro';
+import Pagination from './Pagination.astro';
+import { CATEGORIES } from '../config/categories';
+import type { Deal } from '../lib/deals/schema';
+import { PRICE_RANGES, SORT_OPTIONS, inPriceRange, paginate } from '../lib/deals/query';
+
+interface Props {
+  /** Every deal of the scope, in "recommended" order. */
+  deals: readonly Deal[];
+  page: number;
+  pageSize: number;
+  /** Base path of page 1; page n > 1 lives at `${base}sayfa/n/`. */
+  base: string;
+  placement: string;
+}
+const { deals, page, pageSize, base, placement } = Astro.props;
+const { items, totalPages } = paginate(deals, page, pageSize);
+const ranges = PRICE_RANGES.map((range) => ({ ...range, count: deals.filter((deal) => inPriceRange(deal.price, range.value)).length }));
+const usefulRanges = ranges.filter((range) => range.count > 0);
+const hasSessions = deals.some((deal) => deal.sessions.length > 0);
+const hasDiscounts = deals.some((deal) => deal.discountPercent !== null);
+const sorts = SORT_OPTIONS.filter((option) => (option.value !== 'seans' || hasSessions) && (option.value !== 'indirim' || hasDiscounts));
+// ids share their provider prefix ("firsatbufirsat:"); send it once (Istanbul lists ~1,300 deals)
+const firstId = deals[0]?.id ?? '';
+const idPrefix = deals.every((deal) => deal.id.startsWith(firstId.slice(0, firstId.indexOf(':') + 1)))
+  ? firstId.slice(0, firstId.indexOf(':') + 1)
+  : '';
+const categoryNames = Object.fromEntries(CATEGORIES.map((category) => [category.slug, category.shortName]));
+// tools only help when there is something to reorder
+const withTools = deals.length > 3;
+const first = (page - 1) * pageSize + 1;
+const rangeText =
+  totalPages > 1 ? `${first.toLocaleString('tr-TR')}–${(first + items.length - 1).toLocaleString('tr-TR')} arası gösteriliyor` : '';
+---
+
+<div
+  data-scope={withTools ? '' : undefined}
+  data-scope-prefix={withTools ? idPrefix : undefined}
+  data-scope-ids={withTools ? deals.map((deal) => deal.id.slice(idPrefix.length)).join(',') : undefined}
+  data-categories={withTools ? JSON.stringify(categoryNames) : undefined}
+  data-placement={placement}
+  data-total={deals.length}
+>
+  {withTools && <CardTemplates />}
+  {withTools && (
+    <form class="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3" data-scope-tools hidden>
+      <p class="order-1 text-sm font-semibold text-ink-2" aria-live="polite" data-scope-count>
+        {deals.length.toLocaleString('tr-TR')} fırsat
+        {rangeText && <span class="font-normal text-muted max-sm:hidden"> · {rangeText}</span>}
+      </p>
+      <label class="order-2 ml-auto flex items-center gap-2 text-sm font-semibold text-ink-2 lg:order-3">
+        <Icon name="filter" size={16} class="text-muted" />
+        <span class="max-sm:sr-only">Sırala</span>
+        <select name="sirala" class="field h-10 !w-auto max-w-[13.5rem] py-0 pl-3 pr-8 text-sm font-semibold" data-scope-sort>
+          {sorts.map((option) => (
+            <option value={option.value}>{option.label}</option>
+          ))}
+        </select>
+      </label>
+      {usefulRanges.length > 1 && (
+        <fieldset class="order-3 -mx-4 w-[calc(100%+2rem)] min-w-0 sm:-mx-6 sm:w-[calc(100%+3rem)] lg:order-2 lg:mx-0 lg:w-auto lg:flex-1">
+          <legend class="sr-only">Fiyat aralığı</legend>
+          <div class="flex gap-2 overflow-x-auto px-4 py-0.5 scrollbar-none sm:px-6 lg:flex-wrap lg:px-0">
+            <label class="chip-option py-1">
+              <input type="radio" name="fiyat" value="" class="sr-only" checked />
+              Tüm fiyatlar
+            </label>
+            {usefulRanges.map((range) => (
+              <label class="chip-option py-1">
+                <input type="radio" name="fiyat" value={range.value} class="sr-only" />
+                {range.label}
+                <span class="text-xs font-semibold opacity-60">{range.count}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
+    </form>
+  )}
+
+  <div data-scope-results>
+    <DealGrid deals={items} placement={placement} eagerCount={2} />
+  </div>
+  <div class="hidden" data-scope-empty>
+    <div class="card p-6 text-center">
+      <p class="font-display text-lg font-bold">Bu fiyat aralığında fırsat yok.</p>
+      <p class="mt-1 text-sm text-muted">Başka bir aralık seçin ya da “Tüm fiyatlar”a dönün.</p>
+    </div>
+  </div>
+  <div class="mt-8 flex justify-center">
+    <button type="button" class="btn-ghost hidden" data-scope-more>
+      Daha fazla göster
+    </button>
+  </div>
+  <div data-scope-pagination>
+    <Pagination page={page} totalPages={totalPages} base={base} />
+  </div>
+</div>
+
+<script>
+  import '../scripts/scope';
+</script>

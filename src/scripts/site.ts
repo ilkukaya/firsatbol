@@ -62,6 +62,23 @@ document.addEventListener('click', (event) => {
   track('deal_click', { deal: dealId, provider, category, city, placement });
 });
 
+// --- WhatsApp buttons on deal cards -------------------------------------------
+// warm the price card on first touch so it is ready when WhatsApp fetches the link preview
+const warmed = new Set<string>();
+const warmCard = (event: Event) => {
+  const card = (event.target as Element | null)?.closest?.<HTMLElement>('[data-card-share]')?.dataset.shareCard;
+  if (!card || warmed.has(card)) return;
+  warmed.add(card);
+  new Image().src = card;
+};
+['pointerover', 'touchstart', 'focusin'].forEach((type) => document.addEventListener(type, warmCard, { passive: true }));
+document.addEventListener('click', (event) => {
+  const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[data-card-share]');
+  if (!link) return;
+  warmCard(event);
+  track('deal_share', { deal: link.dataset.dealId, placement: 'card-whatsapp' });
+});
+
 // --- deal detail view ---------------------------------------------------------
 const view = document.querySelector<HTMLElement>('[data-deal-view]');
 if (view) {

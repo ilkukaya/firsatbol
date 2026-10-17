@@ -3,17 +3,16 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AttributionNotice from './AttributionNotice.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
-import DealGrid from './DealGrid.astro';
+import ScopedDeals from './ScopedDeals.astro';
 import EmptyDeals from './EmptyDeals.astro';
 import GuideCard from './GuideCard.astro';
 import Icon from './Icon.astro';
 import FilterBar from './FilterBar.astro';
-import Pagination from './Pagination.astro';
 import AdSlot from './AdSlot.astro';
 import type { Category } from '../config/categories';
 import type { Deal } from '../lib/deals/schema';
 import { MIN_COMBO_PAGE, countBy } from '../lib/deals/taxonomy';
-import { paginate } from '../lib/deals/query';
+import { PAGE_SIZE, paginate } from '../lib/deals/query';
 import { readingMinutes } from '../lib/content';
 import { breadcrumbJsonLd, itemListJsonLd } from '../lib/seo';
 import { getDeals } from '../lib/deals/repository';
@@ -30,7 +29,7 @@ interface Props {
 }
 const { category, deals, page, city } = Astro.props;
 const base = city ? `/kategori/${category.slug}/${city.slug}/` : `/kategori/${category.slug}/`;
-const { items, totalPages } = paginate(deals, page);
+const { items } = paginate(deals, page);
 const canonical = page > 1 ? `${base}sayfa/${page}/` : base;
 
 const cityCounts = city ? new Map<string, number>() : countBy(deals, (deal) => deal.citySlug);
@@ -156,11 +155,10 @@ const crumbs = [
 
   <div class="container-page py-10">
     {items.length > 0 ? (
-      <DealGrid deals={items} placement={`category-${category.slug}`} eagerCount={2} />
+      <ScopedDeals deals={deals} page={page} pageSize={PAGE_SIZE} base={base} placement={`category-${category.slug}`} />
     ) : (
       <EmptyDeals context={`${category.name} kategorisinde şu anda yetkili kaynaklarımızdan gelen yayında bir fırsat bulunmuyor.`} />
     )}
-    <Pagination page={page} totalPages={totalPages} base={base} />
     <AdSlot id="category-bottom" />
 
     {guides.length > 0 && page === 1 && (

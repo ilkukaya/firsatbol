@@ -1,0 +1,31 @@
+---
+/**
+ * "Türkiye geneli" block of city pages: deals the partner does not tie to a city (stays, tours,
+ * shipped products), so visitors of every city see them too. Links to /turkiye-geneli/.
+ */
+import DealGrid from './DealGrid.astro';
+import SectionHeader from './SectionHeader.astro';
+import { getDeals } from '../lib/deals/repository';
+import { nationwideDeals } from '../lib/deals/pages';
+
+interface Props {
+  limit?: number;
+}
+const { limit = 8 } = Astro.props;
+const { deals } = await getDeals();
+const all = nationwideDeals(deals);
+---
+
+{all.length > 0 && (
+  <section class="mt-14 rounded-[var(--radius-card)] bg-canvas p-4 ring-1 ring-line sm:p-6" aria-labelledby="turkiye-geneli">
+    <SectionHeader
+      id="turkiye-geneli"
+      eyebrow="Türkiye geneli"
+      title="Şehirden bağımsız fırsatlar"
+      description="Belirli bir şehre bağlı olmayan konaklama, tur ve ürün fırsatları; nerede yaşarsan yaşa inceleyebilirsin."
+      href="/turkiye-geneli/"
+      linkLabel={`Tüm ${all.length.toLocaleString('tr-TR')} fırsat`}
+    />
+    <DealGrid deals={all.slice(0, limit)} placement="nationwide-block" />
+  </section>
+)}

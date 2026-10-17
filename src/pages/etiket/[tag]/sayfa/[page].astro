@@ -1,0 +1,24 @@
+---
+import type { GetStaticPaths } from 'astro';
+import TagPageView from '../../../../components/TagPageView.astro';
+import { getDeals } from '../../../../lib/deals/repository';
+import { facetsOf, type SubFacet } from '../../../../lib/deals/facets';
+import { laterPages } from '../../../../lib/deals/pages';
+import { FACET_PAGE_SIZE } from '../../../../lib/deals/query';
+
+/** /etiket/<tag>/sayfa/<n>/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return facetsOf(deals).tags.flatMap((tag) =>
+    laterPages(tag.deals.length, FACET_PAGE_SIZE).map((page) => ({ params: { tag: tag.slug, page: String(page) }, props: { tag, page } })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  tag: SubFacet;
+  page: number;
+}
+const { tag, page } = Astro.props;
+---
+
+<TagPageView tag={tag} page={page} />

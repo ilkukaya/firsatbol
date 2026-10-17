@@ -1,0 +1,62 @@
+---
+/** District × sub-category page (/sehir/<city>/<district>/<tag>/ and its /sayfa/<n>/ pages). */
+import FacetView from './FacetView.astro';
+import { getDeals } from '../lib/deals/repository';
+import { guidesFor } from '../lib/guides';
+import { FACET_MIN_INDEX, facetsOf, topicAncestorCrumbs, topicChildLinks, type DistrictTagPage } from '../lib/deals/facets';
+import { slugify } from '../lib/slug';
+
+interface Props {
+  page: DistrictTagPage;
+  /** Page number of the list. */
+  pageNo: number;
+}
+const { page, pageNo } = Astro.props;
+const guides = page.topic ? await guidesFor({ topic: page.topic.slug, city: page.citySlug }) : [];
+const { deals } = await getDeals();
+const { districtTags } = facetsOf(deals);
+const districtDeals = deals.filter((d) => d.citySlug === page.citySlug && d.district && slugify(d.district, 60) === page.districtSlug);
+const districtPages = new Set(
+  districtTags.filter((t) => t.citySlug === page.citySlug && t.districtSlug === page.districtSlug).map((t) => t.slug),
+);
+const districtHref = (slug: string) => `/sehir/${page.citySlug}/${page.districtSlug}/${slug}/`;
+const siblings = page.topic
+  ? topicChildLinks(page.topic, districtDeals, districtPages, districtHref)
+  : {
+      title: `${page.districtName} için diğer alt kategoriler`,
+      items: districtTags
+        .filter((t) => t.citySlug === page.citySlug && t.districtSlug === page.districtSlug && t.slug !== page.slug)
+        .sort((a, b) => b.deals.length - a.deals.length)
+        .slice(0, 20)
+        .map((t) => ({ href: districtHref(t.slug), label: t.name, count: t.deals.length })),
+    };
+const otherDistricts = districtTags
+  .filter((t) => t.citySlug === page.citySlug && t.slug === page.slug && t.districtSlug !== page.districtSlug)
+  .sort((a, b) => a.districtName.localeCompare(b.districtName, 'tr'))
+  .map((t) => ({ href: `/sehir/${t.citySlug}/${t.districtSlug}/${t.slug}/`, label: t.districtName, count: t.deals.length }));
+const base = `/sehir/${page.citySlug}/${page.districtSlug}/${page.slug}/`;
+const label = page.name.toLocaleLowerCase('tr-TR');
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: page.cityName, path: `/sehir/${page.citySlug}/` },
+  { name: page.districtName, path: `/sehir/${page.citySlug}/${page.districtSlug}/` },
+  ...topicAncestorCrumbs(page.topic, districtPages, districtHref),
+  { name: page.name, path: base },
+];
+---
+
+<FacetView
+  title={`${page.districtName} ${page.name} Fırsatları — ${page.cityName}`}
+  heading={`${page.districtName} ${label} fırsatları`}
+  eyebrow={`${page.cityName} · ${page.districtName}`}
+  description={`${page.districtName} (${page.cityName}) ${label} fırsatları: ${page.deals.length} güncel kampanya. Fiyat, seçenek ve koşulları inceleyin.`}
+  deals={page.deals}
+  crumbs={crumbs}
+  canonical={base}
+  noindex={page.deals.length < FACET_MIN_INDEX}
+  quick={siblings.items}
+  menus={[{ label: 'İlçeler', icon: 'pin', groups: [{ title: `Diğer ilçelerde ${label}`, items: otherDistricts }] }]}
+  placement={`district-tag-${page.citySlug}-${page.districtSlug}-${page.slug}`}
+  page={pageNo}
+  guides={guides}
+/>

@@ -1,0 +1,27 @@
+---
+import type { GetStaticPaths } from 'astro';
+import DistrictTagView from '../../../../../../components/DistrictTagView.astro';
+import { getDeals } from '../../../../../../lib/deals/repository';
+import { facetsOf, type DistrictTagPage } from '../../../../../../lib/deals/facets';
+import { laterPages } from '../../../../../../lib/deals/pages';
+import { FACET_PAGE_SIZE } from '../../../../../../lib/deals/query';
+
+/** /sehir/<city>/<district>/<tag>/sayfa/<n>/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return facetsOf(deals).districtTags.flatMap((page) =>
+    laterPages(page.deals.length, FACET_PAGE_SIZE).map((pageNo) => ({
+      params: { slug: page.citySlug, seg: page.districtSlug, tag: page.slug, page: String(pageNo) },
+      props: { page, pageNo },
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: DistrictTagPage;
+  pageNo: number;
+}
+const { page, pageNo } = Astro.props;
+---
+
+<DistrictTagView page={page} pageNo={pageNo} />

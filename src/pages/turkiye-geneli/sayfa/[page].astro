@@ -1,0 +1,17 @@
+---
+import type { GetStaticPaths } from 'astro';
+import NationwidePageView from '../../../components/NationwidePageView.astro';
+import { getDeals } from '../../../lib/deals/repository';
+import { laterPages, nationwideDeals } from '../../../lib/deals/pages';
+import { FACET_PAGE_SIZE } from '../../../lib/deals/query';
+
+/** /turkiye-geneli/sayfa/<n>/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return laterPages(nationwideDeals(deals).length, FACET_PAGE_SIZE).map((page) => ({ params: { page: String(page) }, props: { page } }));
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props as { page: number };
+---
+
+<NationwidePageView page={page} />

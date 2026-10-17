@@ -1,0 +1,46 @@
+---
+/** Türkiye-wide sub-category page (/etiket/<tag>/ and its /sayfa/<n>/ pages). */
+import FacetView from './FacetView.astro';
+import { getDeals } from '../lib/deals/repository';
+import { guidesFor } from '../lib/guides';
+import { TOPICS } from '../config/taxonomy';
+import { facetsOf, subFacetIndexable, topicAncestorCrumbs, topicChildLinks, type SubFacet } from '../lib/deals/facets';
+
+interface Props {
+  tag: SubFacet;
+  page: number;
+}
+const { tag, page } = Astro.props;
+const guides = tag.topic ? await guidesFor({ topic: tag.slug }) : [];
+const { deals } = await getDeals();
+const { citySegments, tags } = facetsOf(deals);
+const available = new Set(tags.map((t) => t.slug));
+const hrefOf = (slug: string) => `/etiket/${slug}/`;
+const cityLinks = citySegments
+  .filter((p) => p.kind === 'tag' && p.slug === tag.slug)
+  .sort((a, b) => b.deals.length - a.deals.length)
+  .map((p) => ({ href: `/sehir/${p.citySlug}/${p.slug}/`, label: p.cityName, count: p.deals.length }));
+const crumbs = [
+  { name: 'Ana sayfa', path: '/' },
+  { name: 'Tüm fırsatlar', path: '/firsatlar/' },
+  ...topicAncestorCrumbs(tag.topic, available, hrefOf),
+  { name: tag.name, path: hrefOf(tag.slug) },
+];
+const root = tag.topic && tag.topic.path.length > 0 ? TOPICS.get(tag.topic.path[0]!)! : null;
+---
+
+<FacetView
+  title={`${tag.name} Fırsatları ve Kampanyaları`}
+  heading={`${tag.name} fırsatları`}
+  eyebrow={root ? `${root.name} · Alt kategori` : tag.topic ? 'Kategori' : 'Alt kategori'}
+  description={`${tag.name} fırsatları: ${tag.deals.length} güncel kampanya. Fiyat, konum ve kullanım koşullarını karşılaştırın; satıcının sayfasına güvenle geçin.`}
+  deals={tag.deals}
+  crumbs={crumbs}
+  canonical={hrefOf(tag.slug)}
+  noindex={!subFacetIndexable(tag)}
+  quick={tag.topic ? topicChildLinks(tag.topic, deals, available, hrefOf).items : []}
+  menus={[{ label: 'Şehirler', icon: 'pin', groups: [{ title: `${tag.name} olan şehirler`, items: cityLinks }] }]}
+  placement={`tag-${tag.slug}`}
+  page={page}
+  guides={guides}
+/>

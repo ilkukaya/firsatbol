@@ -1,0 +1,27 @@
+---
+import type { GetStaticPaths } from 'astro';
+import CitySegmentView from '../../../../../components/CitySegmentView.astro';
+import { getDeals } from '../../../../../lib/deals/repository';
+import { facetsOf, type CityFacetPage } from '../../../../../lib/deals/facets';
+import { laterPages } from '../../../../../lib/deals/pages';
+import { FACET_PAGE_SIZE } from '../../../../../lib/deals/query';
+
+/** /sehir/<city>/<segment>/sayfa/<n>/ */
+export const getStaticPaths = (async () => {
+  const { deals } = await getDeals();
+  return facetsOf(deals).citySegments.flatMap((page) =>
+    laterPages(page.deals.length, FACET_PAGE_SIZE).map((pageNo) => ({
+      params: { slug: page.citySlug, seg: page.slug, page: String(pageNo) },
+      props: { page, pageNo },
+    })),
+  );
+}) satisfies GetStaticPaths;
+
+interface Props {
+  page: CityFacetPage;
+  pageNo: number;
+}
+const { page, pageNo } = Astro.props;
+---
+
+<CitySegmentView page={page} pageNo={pageNo} />

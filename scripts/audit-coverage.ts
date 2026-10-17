@@ -16,7 +16,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { DISTRICTS, isKnownDistrict } from '../src/config/districts';
 import { TOPICS } from '../src/config/taxonomy';
-import { FACET_PAGE_LIMIT, facetsOf } from '../src/lib/deals/facets';
+import { facetsOf } from '../src/lib/deals/facets';
+import { FACET_PAGE_SIZE } from '../src/lib/deals/query';
 import { dedupeDeals, isActive } from '../src/lib/deals/normalize';
 import { resolveTopics } from '../src/lib/deals/topics';
 import { slugify } from '../src/lib/slug';
@@ -162,7 +163,7 @@ for (const deal of deals) {
   }
 }
 const facets = facetsOf(deals);
-const longLists = facets.tags.filter((facet) => facet.deals.length > FACET_PAGE_LIMIT).length;
+const longLists = facets.tags.filter((facet) => facet.deals.length > FACET_PAGE_SIZE).length;
 const istanbulWithout = (DISTRICTS.istanbul ?? []).filter(
   (d) => !facets.districts.some((f) => f.citySlug === 'istanbul' && f.slug === slugify(d.name, 60)),
 );
@@ -173,7 +174,7 @@ report.gaps = {
   withoutDistrict: deals.filter((deal) => deal.citySlug && !deal.district).length,
   districtOutsideProvince: [...unknownDistricts.entries()],
   istanbulDistrictsWithoutDeals: istanbulWithout.map((d) => d.name),
-  categoryPagesOverListLimit: longLists,
+  categoryPagesWithSeveralPages: longLists,
 };
 report.requests = requests;
 
@@ -198,9 +199,7 @@ log(
 );
 log(`İl dışı ilçe kaydı: ${[...unknownDistricts.entries()].map(([k, v]) => `${k} (${v})`).join(', ') || '-'}`);
 log(`Fırsatı olmayan İstanbul ilçeleri: ${istanbulWithout.map((d) => d.name).join(', ') || '-'}`);
-log(
-  `${FACET_PAGE_LIMIT}'tan fazla fırsatı olan kategori sayfası: ${n(longLists)} (ilk ${FACET_PAGE_LIMIT} fırsat listelenir; "Tüm … fırsatı gör" hepsini açar)`,
-);
+log(`Birden fazla sayfaya bölünen kategori sayfası: ${n(longLists)} (sayfa başına ${FACET_PAGE_SIZE} fırsat, /sayfa/2/ …)`);
 for (const record of expired)
   log(`Süresi dolmuş kupon (sitede gösterilmiyor): ${record.id} · ${String(record.title)} · son kullanım ${String(record.couponEndDate)}`);
 log(

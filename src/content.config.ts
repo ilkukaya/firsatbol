@@ -14,6 +14,10 @@ const guides = defineCollection({
     publishedAt: z.coerce.date(),
     updatedAt: z.coerce.date().optional(),
     relatedCategories: z.array(z.enum(categorySlugs)).default([]),
+    /** Category-tree nodes (src/config/taxonomy.ts) whose pages link the guide; its live deals come from them. */
+    relatedTopics: z.array(z.string()).default([]),
+    /** City slug for city guides (e.g. "istanbul"): live deals and links stay in that city. */
+    relatedCity: z.string().optional(),
     keyPoints: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
   }),

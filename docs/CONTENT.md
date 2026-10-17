@@ -11,7 +11,7 @@ build instead of breaking the live site.
 | Add an original summary to a partner deal | `src/content/deal-notes/<anything>.md` with `dealId` (shown on each deal page) |
 | Feature a deal on the homepage | `featured: true` in an editorial deal or deal note |
 | Hide a partner deal | deal note with `hidden: true` |
-| Publish a guide | `src/content/guides/<slug>.md` (see existing frontmatter) |
+| Publish a guide | `src/content/guides/<slug>.md` (see existing frontmatter). `relatedTopics` (category-tree slugs, e.g. `masaj`) links the guide from those category pages and fills its "live deals" block; `relatedCity` (e.g. `istanbul`) keeps both in one city |
 | Edit legal / info pages | `src/content/pages/*.md` |
 | Edit category names, intros, tips, keyword mapping | `src/config/categories.ts` |
 | Edit city intros / featured cities | `src/config/cities.ts` |

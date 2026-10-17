@@ -23,7 +23,8 @@ export const FACET_MIN_INDEX = 5;
 export const TAG_MIN_PAGE = 5;
 export const TAG_MIN_INDEX = 8;
 export const CITY_TAG_MIN_PAGE = 4;
-export const FACET_PAGE_LIMIT = 60;
+/** Path segment of numbered list pages (…/sayfa/2/); never used as a district or tag slug. */
+export const PAGINATION_SEGMENT = 'sayfa';
 
 export interface Facet {
   slug: string;
@@ -169,7 +170,10 @@ export interface CityFacetPage {
  * segment namespace; a district always wins over a tag with the same slug.
  */
 export function citySegmentPages(deals: readonly Deal[]): CityFacetPage[] {
-  const pages: CityFacetPage[] = districtFacets(deals).map((facet) => ({ kind: 'district', topic: null, ...facet }));
+  const pages: CityFacetPage[] = districtFacets(deals)
+    .filter((facet) => facet.slug !== PAGINATION_SEGMENT)
+    .map((facet) => ({ kind: 'district', topic: null, ...facet }));
+  // "sayfa" is the pagination segment (/sehir/<city>/sayfa/<n>/)
   const taken = new Set(pages.map((page) => `${page.citySlug}/${page.slug}`));
   const cities = new Map<string, { name: string; deals: Deal[] }>();
   for (const deal of deals) {
@@ -181,7 +185,7 @@ export function citySegmentPages(deals: readonly Deal[]): CityFacetPage[] {
   for (const [citySlug, city] of cities) {
     for (const tag of subcategoryFacets(city.deals, CITY_TAG_MIN_PAGE)) {
       const key = `${citySlug}/${tag.slug}`;
-      if (taken.has(key)) continue;
+      if (taken.has(key) || tag.slug === PAGINATION_SEGMENT) continue;
       taken.add(key);
       pages.push({ kind: 'tag', citySlug, cityName: city.name, slug: tag.slug, name: tag.name, topic: tag.topic, deals: tag.deals });
     }
@@ -203,16 +207,18 @@ export interface DistrictTagPage {
 /** /sehir/<city>/<district>/<tag>/ pages, e.g. Kadıköy › masaj. */
 export function districtTagPages(deals: readonly Deal[]): DistrictTagPage[] {
   return districtFacets(deals).flatMap((district) =>
-    subcategoryFacets(district.deals, FACET_MIN_PAGE).map((tag) => ({
-      citySlug: district.citySlug,
-      cityName: district.cityName,
-      districtSlug: district.slug,
-      districtName: district.name,
-      slug: tag.slug,
-      name: tag.name,
-      topic: tag.topic,
-      deals: tag.deals,
-    })),
+    subcategoryFacets(district.deals, FACET_MIN_PAGE)
+      .filter((tag) => tag.slug !== PAGINATION_SEGMENT)
+      .map((tag) => ({
+        citySlug: district.citySlug,
+        cityName: district.cityName,
+        districtSlug: district.slug,
+        districtName: district.name,
+        slug: tag.slug,
+        name: tag.name,
+        topic: tag.topic,
+        deals: tag.deals,
+      })),
   );
 }
 

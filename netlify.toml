@@ -54,6 +54,36 @@
   force = true
 
 [[redirects]]
+  from = "/etiket/:tag/sayfa/1/"
+  to = "/etiket/:tag/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/turkiye-geneli/sayfa/1/"
+  to = "/turkiye-geneli/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/sehir/:city/sayfa/1/"
+  to = "/sehir/:city/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/sehir/:city/:seg/sayfa/1/"
+  to = "/sehir/:city/:seg/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/sehir/:city/:seg/:tag/sayfa/1/"
+  to = "/sehir/:city/:seg/:tag/"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/kategori/"
   to = "/firsatlar/"
   status = 301

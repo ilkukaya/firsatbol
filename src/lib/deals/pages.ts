@@ -28,3 +28,14 @@ export function categoryCityCombos(deals: readonly Deal[]): { category: string; 
   }
   return combos;
 }
+
+/** Deals without a city (Türkiye-wide stays, tours, shipped products) in "recommended" order. */
+export function nationwideDeals(deals: readonly Deal[]): Deal[] {
+  const byId = new Map(deals.map((deal) => [deal.id, deal]));
+  return sortEntries(deals.filter((deal) => !deal.citySlug).map(toIndexEntry)).map((entry) => byId.get(entry.id)!);
+}
+
+/** Page numbers after the first for a list of `total` deals (for /sayfa/<n>/ routes). */
+export function laterPages(total: number, size: number): number[] {
+  return Array.from({ length: Math.max(0, Math.ceil(total / size) - 1) }, (_, index) => index + 2);
+}

@@ -5,7 +5,7 @@ import type { Deal, DealIndexEntry } from './schema';
  * Pure filtering / sorting / pagination over the compact index. Shared by the build
  * (static pages) and the browser (live filters on /firsatlar/), so results are identical.
  */
-export type SortKey = 'onerilen' | 'yeni' | 'fiyat-artan' | 'fiyat-azalan' | 'indirim' | 'bitis';
+export type SortKey = 'onerilen' | 'yeni' | 'fiyat-artan' | 'fiyat-azalan' | 'indirim' | 'bitis' | 'seans';
 
 export const SORT_OPTIONS: readonly { value: SortKey; label: string }[] = [
   { value: 'onerilen', label: 'Önerilen' },
@@ -14,17 +14,40 @@ export const SORT_OPTIONS: readonly { value: SortKey; label: string }[] = [
   { value: 'fiyat-azalan', label: 'Fiyat: yüksekten düşüğe' },
   { value: 'indirim', label: 'En yüksek indirim' },
   { value: 'bitis', label: 'Bitişi yaklaşan' },
+  { value: 'seans', label: 'En yakın seans' },
 ];
+
+/** Price bands of the "Fiyat" filter (value = query-string form, upper bound exclusive). */
+export const PRICE_RANGES: readonly { value: string; label: string; min: number; max: number }[] = [
+  { value: '0-250', label: '250 TL altı', min: 0, max: 250 },
+  { value: '250-500', label: '250–500 TL', min: 250, max: 500 },
+  { value: '500-1000', label: '500–1.000 TL', min: 500, max: 1000 },
+  { value: '1000-2500', label: '1.000–2.500 TL', min: 1000, max: 2500 },
+  { value: '2500-5000', label: '2.500–5.000 TL', min: 2500, max: 5000 },
+  { value: '5000-', label: '5.000 TL üzeri', min: 5000, max: Infinity },
+];
+
+/** `sehir` value for deals without a city (shipped products, online services, coupons). */
+export const NATIONWIDE = 'turkiye-geneli';
 
 export interface DealFilters {
   q?: string | undefined;
   kategori?: string | undefined;
   sehir?: string | undefined;
   magaza?: string | undefined;
+  fiyat?: string | undefined;
   sirala?: SortKey | undefined;
 }
 
+export function inPriceRange(price: number | null, range: string | undefined): boolean {
+  if (!range) return true;
+  const band = PRICE_RANGES.find((option) => option.value === range);
+  return !band || (price !== null && price >= band.min && price < band.max);
+}
+
 export const PAGE_SIZE = 24;
+/** Sub-category, city and district pages list more deals per page (2, 3 and 4 columns divide it). */
+export const FACET_PAGE_SIZE = 48;
 
 export function toIndexEntry(deal: Deal): DealIndexEntry {
   return {
@@ -73,20 +96,23 @@ export function filterEntries(entries: readonly DealIndexEntry[], filters: DealF
   const terms = filters.q ? searchFold(filters.q).split(' ').filter(Boolean) : [];
   return entries.filter((entry) => {
     if (filters.kategori && entry.c !== filters.kategori) return false;
-    if (filters.sehir && entry.ct !== filters.sehir) return false;
+    if (filters.sehir && (filters.sehir === NATIONWIDE ? entry.ct !== null : entry.ct !== filters.sehir)) return false;
     if (filters.magaza && (!entry.m || merchantKey(entry.m) !== filters.magaza)) return false;
+    if (!inPriceRange(entry.p, filters.fiyat)) return false;
     return terms.every((term) => searchText(entry).includes(term));
   });
 }
 
 const time = (value: string | null) => (value ? Date.parse(value) : Number.NaN);
+const sequence = (id: string) => Number(/(\d+)$/.exec(id)?.[1] ?? 0);
 
 export function sortEntries(entries: readonly DealIndexEntry[], sort: SortKey = 'onerilen'): DealIndexEntry[] {
   const list = [...entries];
   const priceless = (value: number | null, high: boolean) => (value === null ? (high ? -Infinity : Infinity) : value);
   switch (sort) {
     case 'yeni':
-      return list.sort((a, b) => (time(b.vf) || 0) - (time(a.vf) || 0));
+      // start date when the source gives one, else the source's id (partners number new deals upwards)
+      return list.sort((a, b) => (time(b.vf) || 0) - (time(a.vf) || 0) || sequence(b.id) - sequence(a.id));
     case 'fiyat-artan':
       return list.sort((a, b) => priceless(a.p, false) - priceless(b.p, false));
     case 'fiyat-azalan':
@@ -95,6 +121,8 @@ export function sortEntries(entries: readonly DealIndexEntry[], sort: SortKey = 
       return list.sort((a, b) => (b.dp ?? -1) - (a.dp ?? -1));
     case 'bitis':
       return list.sort((a, b) => (time(a.vu) || Infinity) - (time(b.vu) || Infinity));
+    case 'seans':
+      return list.sort((a, b) => (time(a.ns) || Infinity) - (time(b.ns) || Infinity));
     default:
       // featured first, then deals with verified discounts, then provider order
       return list

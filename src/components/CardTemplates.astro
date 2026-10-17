@@ -1,0 +1,23 @@
+---
+/** Icon templates for deal cards rendered in the browser (src/scripts/card.ts). Render once per page. */
+import Icon from './Icon.astro';
+import { CATEGORIES } from '../config/categories';
+---
+
+<template data-icon="pin">
+  <Icon name="pin" size={14} />
+</template>
+<template data-icon="clock">
+  <Icon name="clock" size={14} />
+</template>
+<template data-icon="calendar">
+  <Icon name="calendar" size={14} />
+</template>
+<template data-icon="external">
+  <Icon name="external" size={15} />
+</template>
+{CATEGORIES.map((category) => (
+  <template data-icon={`cat-${category.slug}`}>
+    <Icon name={category.icon} size={44} strokeWidth={1.5} />
+  </template>
+))}

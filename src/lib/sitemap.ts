@@ -1,7 +1,7 @@
 import { getCollection } from 'astro:content';
 import { CATEGORIES } from '../config/categories';
 import { getDeals } from './deals/repository';
-import { categoryCityCombos } from './deals/pages';
+import { categoryCityCombos, nationwideDeals } from './deals/pages';
 import { MIN_CITY_INDEX, categoryCounts, citiesWithDeals } from './deals/taxonomy';
 import { FACET_MIN_INDEX, facetsOf, subFacetIndexable } from './deals/facets';
 
@@ -17,6 +17,7 @@ export async function sitemapEntries(): Promise<SitemapEntry[]> {
   const day = generatedAt.slice(0, 10);
   const entries: SitemapEntry[] = [{ path: '/', lastmod: day }];
   if (deals.length > 0) entries.push({ path: '/firsatlar/', lastmod: day }, { path: '/sehirler/', lastmod: day });
+  if (nationwideDeals(deals).length >= FACET_MIN_INDEX) entries.push({ path: '/turkiye-geneli/', lastmod: day });
 
   const counts = categoryCounts(deals);
   for (const category of CATEGORIES)

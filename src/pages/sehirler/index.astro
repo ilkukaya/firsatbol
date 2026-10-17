@@ -29,8 +29,17 @@ const crumbs = [
       <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem]">Şehirlere göre fırsatlar</h1>
       <p class="mt-3 text-[1.05rem] leading-relaxed text-ink-2">
         Fırsatlar, iş ortaklarımızın belirttiği il ve ilçe bilgisine göre listelenir.
-        {nationwide > 0 &&
-          ` Ayrıca ${nationwide.toLocaleString('tr-TR')} fırsat belirli bir şehre bağlı değildir (kargolu ürünler, online hizmetler).`}
+        {nationwide > 0 && (
+          <>
+            {' '}
+            Belirli bir şehre bağlı olmayan {nationwide.toLocaleString('tr-TR')} fırsat (farklı şehirlerdeki oteller, turlar, kargolu
+            ürünler)
+            <a href="/turkiye-geneli/" class="font-semibold text-brand-text underline underline-offset-4">
+              Türkiye geneli
+            </a>
+            sayfasında.
+          </>
+        )}
       </p>
     </div>
     <section aria-labelledby="one-cikan-sehirler" class="mb-10">
