@@ -30,9 +30,9 @@
 | `/firsat/<slug>/` | original summary (or `DEALS_INDEX_PROVIDER_PAGES=true` + long description), unique title |
 | `/kategori/<slug>/` (+ `/sayfa/N/`) | category has deals |
 | `/kategori/<slug>/<city>/` | generated only with ≥ 4 deals |
-| `/sehir/<city>/` | ≥ 3 deals (8 featured cities always exist, noindex while thin) |
-| `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | generated from ≥ 3 (plain tags per city ≥ 4) deals, indexed from ≥ 5 |
-| `/etiket/<tag>/` | category-tree node: generated from ≥ 3, indexed from ≥ 5; plain tag: generated from ≥ 5, indexed from ≥ 8 |
+| `/sehir/<city>/` | all 81 provinces exist; indexed from ≥ 3 deals |
+| `/sehir/<city>/<district>/`, `/sehir/<city>/<tag>/`, `/sehir/<city>/<district>/<tag>/` | districts and category-tree nodes from 1 deal, plain tags from 4 (city) / 3 (district); indexed from ≥ 5 |
+| `/etiket/<tag>/` | category-tree node: generated from 1, indexed from ≥ 5; plain tag: generated from ≥ 5, indexed from ≥ 8 |
 | `/sehirler/` | at least one deal |
 | `/git/<slug>/` (transition page) | never (noindex, nofollow, robots Disallow) |
 | `/rehber/`, `/rehber/<slug>/` | always |

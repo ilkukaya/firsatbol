@@ -58,18 +58,20 @@ describe('facets', () => {
       ['istanbul', 'kadikoy', 6],
       ['istanbul', 'sisli', 3],
       ['istanbul', 'besiktas', 3],
+      ['ankara', 'cankaya', 1], // every district with a deal gets its page
     ]);
   });
   it('creates district × tag pages and city × tag pages without slug clashes', () => {
     const dt = districtTagPages(deals).map((p) => `${p.districtSlug}/${p.slug}:${p.deals.length}`);
     expect(dt).toEqual(expect.arrayContaining(['kadikoy/masaj:4', 'kadikoy/spa:4', 'kadikoy/kopuk-masaji:4', 'sisli/masaj:3']));
-    expect(dt.some((p) => p.startsWith('kadikoy/kahvalti'))).toBe(false); // only 2 deals
+    expect(dt).toContain('kadikoy/kahvalti:2'); // tree nodes get a page from the first deal
     const segments = citySegmentPages(deals);
-    expect(segments.filter((p) => p.kind === 'district').map((p) => p.slug)).toEqual(['kadikoy', 'sisli', 'besiktas']);
+    expect(segments.filter((p) => p.kind === 'district').map((p) => p.slug)).toEqual(['kadikoy', 'sisli', 'besiktas', 'cankaya']);
     // masaj = tagged deals + the Beşiktaş hamam deals (Hamam › Spa › Masaj)
     expect(segments.find((p) => p.kind === 'tag' && p.slug === 'masaj')?.deals).toHaveLength(10);
     expect(segments.find((p) => p.kind === 'tag' && p.slug === 'masaj')?.topic?.name).toBe('Masaj');
-    expect(segments.some((p) => p.citySlug === 'ankara')).toBe(false);
+    // Ankara: only one deal → its district and its tree nodes get pages, plain tags do not
+    expect(segments.filter((p) => p.citySlug === 'ankara').map((p) => `${p.kind}:${p.slug}`)).toEqual(['district:cankaya', 'tag:masaj']);
   });
 
   it('resolves category-tree memberships with ancestors', () => {

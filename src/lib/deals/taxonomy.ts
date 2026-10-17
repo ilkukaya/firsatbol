@@ -1,5 +1,5 @@
 import { CATEGORIES } from '../../config/categories';
-import { FEATURED_CITIES } from '../../config/cities';
+import { FEATURED_CITIES, PROVINCES, normalizeCity } from '../../config/cities';
 import type { Deal } from './schema';
 
 /** Minimum deals for a city or category×city page to be generated / indexed. */
@@ -23,7 +23,7 @@ export interface CityEntry {
   intro: string | null;
 }
 
-/** Featured cities always; other provinces only when they have published deals. */
+/** All 81 provinces: featured cities first, then provinces with deals, then the rest (honest empty state, noindex). */
 export function citiesWithDeals(deals: readonly Deal[]): CityEntry[] {
   const counts = countBy(deals, (deal) => deal.citySlug);
   const names = new Map(deals.filter((deal) => deal.citySlug && deal.city).map((deal) => [deal.citySlug!, deal.city!]));
@@ -37,6 +37,12 @@ export function citiesWithDeals(deals: readonly Deal[]): CityEntry[] {
   for (const [slug, count] of counts) {
     if (!entries.some((entry) => entry.slug === slug)) {
       entries.push({ slug, name: names.get(slug) ?? slug, count, featured: false, intro: null });
+    }
+  }
+  for (const province of PROVINCES) {
+    const city = normalizeCity(province);
+    if (city && !entries.some((entry) => entry.slug === city.slug)) {
+      entries.push({ slug: city.slug, name: city.name, count: 0, featured: false, intro: null });
     }
   }
   return entries;

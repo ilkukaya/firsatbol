@@ -60,7 +60,7 @@ const subcategoryGroups: LinkGroup[] = [
     city ? allDeals.filter((d) => d.citySlug === city.slug) : allDeals,
     citySubPages,
     (slug) => (city ? `/sehir/${city.slug}/${slug}/` : `/etiket/${slug}/`),
-    { roots: treeRoots },
+    { roots: treeRoots, maxDepth: 1 },
   ),
   ...(city
     ? []

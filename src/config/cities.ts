@@ -2,8 +2,8 @@ import { searchFold, slugify } from '../lib/slug';
 
 /**
  * Türkiye's 81 provinces. Used to normalise city names coming from providers.
- * City pages are generated only for `FEATURED_CITIES` and for provinces that
- * actually have published deals (see `src/lib/deals/taxonomy.ts`).
+ * Every province gets a city page; pages without deals show an honest empty state and are
+ * noindex (see `citiesWithDeals` in `src/lib/deals/taxonomy.ts`).
  */
 export const PROVINCES = [
   'Adana',

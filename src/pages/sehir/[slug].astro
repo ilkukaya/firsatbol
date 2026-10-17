@@ -36,7 +36,7 @@ const districtLinks = citySegments
 const subPages = new Set(citySegments.filter((page) => page.citySlug === city.slug && page.kind === 'tag').map((page) => page.slug));
 const cityHref = (slug: string) => `/sehir/${city.slug}/${slug}/`;
 const subcategoryGroups = [
-  ...topicLinkGroups(cityDeals, subPages, cityHref),
+  ...topicLinkGroups(cityDeals, subPages, cityHref, { maxDepth: 1 }),
   {
     title: 'Diğer alt kategoriler',
     items: topTagLinks(cityDeals, subPages, 24).map((tag) => ({ href: cityHref(tag.slug), label: tag.name, count: tag.count })),

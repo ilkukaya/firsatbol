@@ -15,6 +15,9 @@ import { sortEntries, toIndexEntry } from './query';
  * site never publishes hundreds of near-empty combinations.
  */
 export const FACET_MIN_PAGE = 3;
+/** Every category-tree node and every district with at least one deal gets its page (noindex while thin). */
+export const TOPIC_MIN_PAGE = 1;
+export const DISTRICT_MIN_PAGE = 1;
 export const FACET_MIN_INDEX = 5;
 export const TAG_MIN_PAGE = 5;
 export const TAG_MIN_INDEX = 8;
@@ -94,7 +97,7 @@ export function tagFacets(deals: readonly Deal[], min = TAG_MIN_PAGE): Facet[] {
 }
 
 /** Category-tree nodes with their deals, in tree order. */
-export function topicFacets(deals: readonly Deal[], min = FACET_MIN_PAGE): SubFacet[] {
+export function topicFacets(deals: readonly Deal[], min = TOPIC_MIN_PAGE): SubFacet[] {
   const map = new Map<string, Deal[]>();
   for (const deal of deals) {
     for (const slug of deal.topics) {
@@ -122,7 +125,7 @@ function duplicatesTopic(tagDeals: readonly Deal[], members: ReadonlyMap<string,
 }
 
 /** Tree nodes (from `topicMin` deals) and the remaining provider tags (from `tagMin`), largest first. */
-export function subcategoryFacets(deals: readonly Deal[], tagMin = TAG_MIN_PAGE, topicMin = FACET_MIN_PAGE): SubFacet[] {
+export function subcategoryFacets(deals: readonly Deal[], tagMin = TAG_MIN_PAGE, topicMin = TOPIC_MIN_PAGE): SubFacet[] {
   const topics = topicFacets(deals, topicMin);
   const members = topicCounts(deals);
   const tags = tagFacets(deals, tagMin)
@@ -132,7 +135,7 @@ export function subcategoryFacets(deals: readonly Deal[], tagMin = TAG_MIN_PAGE,
 }
 
 /** Districts of every city (by the provider's `town` value). */
-export function districtFacets(deals: readonly Deal[], min = FACET_MIN_PAGE): DistrictFacet[] {
+export function districtFacets(deals: readonly Deal[], min = DISTRICT_MIN_PAGE): DistrictFacet[] {
   const map = new Map<string, DistrictFacet>();
   for (const deal of deals) {
     if (!deal.citySlug || !deal.city || !deal.district) continue;
@@ -239,7 +242,7 @@ export function topicLinkGroups(
   deals: readonly Deal[],
   available: ReadonlySet<string>,
   hrefOf: (slug: string) => string,
-  options: { roots?: readonly string[]; limit?: number } = {},
+  options: { roots?: readonly string[]; limit?: number; maxDepth?: number } = {},
 ): LinkGroup[] {
   const counts = topicCounts(deals);
   const roots = options.roots ?? ROOT_TOPICS;
@@ -247,7 +250,13 @@ export function topicLinkGroups(
     .map((root) => ({
       root,
       items: [...TOPICS.values()]
-        .filter((topic) => (topic.slug === root || topic.path[0] === root) && available.has(topic.slug) && counts.has(topic.slug))
+        .filter(
+          (topic) =>
+            (topic.slug === root || topic.path[0] === root) &&
+            topic.depth <= (options.maxDepth ?? Infinity) &&
+            available.has(topic.slug) &&
+            counts.has(topic.slug),
+        )
         .slice(0, options.limit ?? 40)
         .map((topic) => ({ href: hrefOf(topic.slug), label: topic.name, count: counts.get(topic.slug)! })),
     }))

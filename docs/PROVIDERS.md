@@ -61,12 +61,12 @@ category field), `subDeals` (options with their own prices).
    deal become their own deal ("Başlangıç fiyatı" when session prices differ).
 
 4. **Category tree** (`FIRSATBUFIRSAT_TOPICS`, default on): one nationwide `tagIds[]=<id>` query per node of
-   `src/config/taxonomy.ts` (94 nodes, ≈ 135 requests, ids only), paged the same way. Each deal gets its node memberships;
+   `src/config/taxonomy.ts` (254 nodes / 249 ids, ≈ 290 requests, ids only), paged the same way. Each deal gets its node memberships;
    ancestors and nodes whose name equals one of the deal's own tags are added at build time (`src/lib/deals/topics.ts`).
    A failed node is reported as a warning and only loses its own pages.
 
-Measured 2026-10-16: **175 requests, ~80 s, 1 943 deals, 550 with an event calendar, 11 event-only deals,
-6 340 deal–category memberships.**
+Measured 2026-10-17: **332 requests, ~135 s, 1 921 deals, 537 with an event calendar, 11 event-only deals,
+7 796 deal–category memberships.**
 
 ### Activation steps
 
@@ -80,8 +80,8 @@ Measured 2026-10-16: **175 requests, ~80 s, 1 943 deals, 550 with an event calen
 
 ### Category tree, district & sub-category pages
 
-The partner's category tree (Masaj › Spa › Hamam › Kese, Tiyatro › Yetişkin tiyatrosu › Komedi…, Aktivite, Turlar,
-Kahvaltı) lives in **`src/config/taxonomy.ts`** with each node's `tagIds[]` id, as supplied by the owner from the
+The partner's category tree (Masaj, Tiyatro, Aktivite, Turlar, Kahvaltı, Yemek, Güzellik, Oteller, Konser, Stand up,
+Kurs, Hizmet — e.g. Masaj › Spa › Hamam › Kese, Yemek › Fast food › Pizza) lives in **`src/config/taxonomy.ts`** with each node's `tagIds[]` id, as supplied by the owner from the
 publisher dashboard. The same tree is applied automatically to **Türkiye, every province and every district** — no
 per-city or per-district API links are needed, because the location comes from each deal's own `city`/`town`
 (district and city queries return only deals already in the catalog, verified).
@@ -93,8 +93,13 @@ A node's page lists its own deals and those of all its sub-categories; breadcrum
 category pages show the tree grouped by main category. Other provider tags keep their own pages ("Diğer alt
 kategoriler"), except tags that only rename a node (≥ 90 % of their deals in a node they cover to ≥ 60 %).
 
-Generated from ≥ 3 deals (plain tags: ≥ 5 Türkiye-wide, ≥ 4 per city), indexed from ≥ 5 (plain tags Türkiye-wide: ≥ 8).
-Measured 2026-10-16: 5 740 pages, 291 Türkiye-wide sub-category pages, 1 106 sitemap URLs.
+Every tree node and every district with **at least one deal** gets its page in every scope (Türkiye, each province,
+each district); all 81 provinces have a city page. Pages below 5 deals are `noindex` (thin content) but fully linked.
+Plain provider tags: ≥ 5 deals Türkiye-wide, ≥ 4 per city, ≥ 3 per district; indexed from 8 (Türkiye-wide) / 5.
+The "Oteller" node groups the partner's hotel categories (Şehir otelleri, Tatil otelleri, Bodrum otelleri…);
+"Hamburger" and "Burger" share id 208 and "Oto yıkama" has two ids (143, 759).
+Measured 2026-10-17: 7 486 pages (81 provinces, 1 073 district/city-category pages, 1 808 district-category pages,
+397 Türkiye-wide category pages), 1 055 sitemap URLs.
 
 **Adding categories later:** append nodes to `TAXONOMY` in `src/config/taxonomy.ts` (name, `tagId`, optional
 `children`; main nodes also name the FırsatBol `category`). Only the category name, its `tagIds[]` number and its

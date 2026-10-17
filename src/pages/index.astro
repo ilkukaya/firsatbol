@@ -37,7 +37,8 @@ const popular = popularDeals(deals, 8);
 const thisWeek = upcomingEvents(deals, now, 7, 8);
 
 const counts = categoryCounts(deals);
-const cities = citiesWithDeals(deals);
+// cities with deals (and the featured ones); every other province is listed on /sehirler/
+const cities = citiesWithDeals(deals).filter((city) => city.count > 0 || city.featured);
 const topCity = [...cities].sort((a, b) => b.count - a.count)[0];
 const topCityDeals = topCity && topCity.count >= 2 ? deals.filter((deal) => deal.citySlug === topCity.slug).slice(0, 4) : [];
 

@@ -126,7 +126,7 @@ export function readFbfConfig(): FbfConfig {
     cityMode: cities.mode,
     eventsEndpoint: eventsSetting === 'off' ? '' : (eventsSetting ?? FBF_EVENTS_ENDPOINT),
     topics: readBool('FIRSATBUFIRSAT_TOPICS', true)
-      ? [...TOPICS.values()].flatMap((topic) => (topic.tagId === undefined ? [] : [{ slug: topic.slug, tagId: topic.tagId }]))
+      ? [...TOPICS.values()].flatMap((topic) => topic.tagIds.map((tagId) => ({ slug: topic.slug, tagId })))
       : [],
     extraQueries: (readEnv('FIRSATBUFIRSAT_QUERIES') ?? '')
       .split(/[\n|]+/)
