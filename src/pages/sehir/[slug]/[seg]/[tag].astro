@@ -37,8 +37,7 @@ const siblings = page.topic
     };
 const otherDistricts = districtTags
   .filter((t) => t.citySlug === page.citySlug && t.slug === page.slug && t.districtSlug !== page.districtSlug)
-  .sort((a, b) => b.deals.length - a.deals.length)
-  .slice(0, 40)
+  .sort((a, b) => a.districtName.localeCompare(b.districtName, 'tr'))
   .map((t) => ({ href: `/sehir/${t.citySlug}/${t.districtSlug}/${t.slug}/`, label: t.districtName, count: t.deals.length }));
 const base = `/sehir/${page.citySlug}/${page.districtSlug}/${page.slug}/`;
 const label = page.name.toLocaleLowerCase('tr-TR');
@@ -60,7 +59,8 @@ const crumbs = [
   crumbs={crumbs}
   canonical={base}
   noindex={page.deals.length < FACET_MIN_INDEX}
-  links={[siblings, { title: `Diğer ilçelerde ${label}`, items: otherDistricts }]}
+  quick={siblings.items}
+  menus={[{ label: 'İlçeler', icon: 'pin', groups: [{ title: `Diğer ilçelerde ${label}`, items: otherDistricts }] }]}
   searchTerm={`${page.districtName} ${page.name}`}
   placement={`district-tag-${page.citySlug}-${page.districtSlug}-${page.slug}`}
 />

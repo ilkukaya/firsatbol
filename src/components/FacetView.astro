@@ -3,10 +3,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AttributionNotice from './AttributionNotice.astro';
 import Breadcrumbs from './Breadcrumbs.astro';
 import DealGrid from './DealGrid.astro';
-import LinkGroups from './LinkGroups.astro';
+import FilterBar from './FilterBar.astro';
 import { CATEGORIES } from '../config/categories';
 import type { Deal } from '../lib/deals/schema';
-import { FACET_PAGE_LIMIT, type LinkGroup } from '../lib/deals/facets';
+import { FACET_PAGE_LIMIT, type LinkGroup, type LinkItem } from '../lib/deals/facets';
 import { countBy } from '../lib/deals/taxonomy';
 import { breadcrumbJsonLd, itemListJsonLd, type Crumb } from '../lib/seo';
 
@@ -21,13 +21,29 @@ interface Props {
   crumbs: Crumb[];
   canonical: string;
   noindex: boolean;
-  /** Related facet links (districts, sub-categories…). */
-  links?: LinkGroup[];
+  /** One scrollable row of shortcuts (sub-categories…). */
+  quick?: LinkItem[];
+  /** Dropdown menus holding the full link lists (districts, categories…). */
+  menus?: { label: string; icon: 'pin' | 'tag' | 'filter'; groups: LinkGroup[] }[];
   /** Search term for "see all" when the list is truncated. */
   searchTerm?: string | undefined;
   placement: string;
 }
-const { title, heading, eyebrow, description, lead, deals, crumbs, canonical, noindex, links = [], searchTerm, placement } = Astro.props;
+const {
+  title,
+  heading,
+  eyebrow,
+  description,
+  lead,
+  deals,
+  crumbs,
+  canonical,
+  noindex,
+  quick = [],
+  menus = [],
+  searchTerm,
+  placement,
+} = Astro.props;
 const shown = deals.slice(0, FACET_PAGE_LIMIT);
 
 // factual summary from the data itself (no invented claims)
@@ -68,21 +84,21 @@ const summary = [
   ]}
 >
   <section class="border-b border-line bg-white">
-    <div class="container-page py-8 sm:py-10">
+    <div class="container-page py-6 sm:py-8">
       <Breadcrumbs crumbs={crumbs} />
       <div class="mt-5 max-w-3xl">
         <p class="eyebrow mb-2">{eyebrow}</p>
         <h1 class="font-display text-3xl font-extrabold tracking-tight sm:text-[2.6rem] sm:leading-[1.1]">{heading}</h1>
-        <p class="mt-4 text-[1.05rem] leading-relaxed text-ink-2">
+        <p class="mt-4 line-clamp-3 text-[1.05rem] leading-relaxed text-ink-2 sm:line-clamp-none" data-clamp>
           {lead && <>{lead} </>}
           {summary}
         </p>
       </div>
-      <LinkGroups groups={links} />
+      <FilterBar quick={quick} menus={menus} />
     </div>
   </section>
 
-  <div class="container-page py-10">
+  <div class="container-page pb-10 pt-6">
     <DealGrid deals={shown} placement={placement} eagerCount={2} />
     {deals.length > shown.length && (
       <div class="mt-8 text-center">

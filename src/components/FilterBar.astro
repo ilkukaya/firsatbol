@@ -1,0 +1,117 @@
+---
+/**
+ * Compact navigation for city, district and category pages: at most two rows above the deals.
+ *  - `menus`: dropdown buttons ("İlçeler ▾", "Kategoriler ▾") whose panels hold the full link lists
+ *    (still in the HTML, so search engines keep finding every district and category page);
+ *  - `quick`: one horizontally scrollable row of the most useful shortcuts.
+ * Works without JavaScript (<details>); the script only closes other panels, outside clicks and Esc.
+ */
+import Icon from './Icon.astro';
+import type { LinkGroup, LinkItem } from '../lib/deals/facets';
+
+interface Props {
+  quick?: LinkItem[];
+  menus?: { label: string; icon: 'pin' | 'tag' | 'filter'; groups: LinkGroup[] }[];
+  class?: string;
+}
+const { quick = [], class: className = 'mt-6' } = Astro.props;
+const menus = (Astro.props.menus ?? [])
+  .map((menu) => ({ ...menu, groups: menu.groups.filter((group) => group.items.length > 0) }))
+  .filter((menu) => menu.groups.length > 0);
+const fmt = (n: number) => n.toLocaleString('tr-TR');
+const total = (menu: (typeof menus)[number]) => menu.groups.reduce((sum, group) => sum + group.items.length, 0);
+---
+
+{(menus.length > 0 || quick.length > 0) && (
+  <div class:list={['flex flex-col gap-3 sm:flex-row sm:items-center', className]} data-filter-bar>
+    {menus.length > 0 && (
+      <div class="flex shrink-0 gap-2">
+        {menus.map((menu) => (
+          <details class="group/menu relative" data-filter-menu>
+            <summary class="flex cursor-pointer list-none items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-sm transition select-none hover:bg-ink-2 [&::-webkit-details-marker]:hidden">
+              <Icon name={menu.icon} size={16} />
+              {menu.label}
+              <span class="rounded-full bg-white/15 px-1.5 text-xs">{fmt(total(menu))}</span>
+              <Icon name="chevron-down" size={16} class="transition group-open/menu:rotate-180" />
+            </summary>
+            {/* mobile: bottom sheet; from sm: dropdown under the button */}
+            <div class="fixed inset-x-3 bottom-3 z-50 max-h-[72vh] overflow-y-auto overscroll-contain rounded-2xl bg-white p-4 shadow-[0_-8px_40px_rgb(15_27_45/0.25)] ring-1 ring-line sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:mt-2 sm:max-h-[65vh] sm:w-[min(46rem,calc(100vw-3rem))] sm:p-5 sm:shadow-[var(--shadow-lift)]">
+              <div class="mb-3 flex items-center justify-between sm:hidden">
+                <p class="font-display text-lg font-bold text-ink">{menu.label}</p>
+                <button type="button" class="rounded-full px-3 py-1 text-sm font-semibold text-ink-2 ring-1 ring-line" data-filter-close>
+                  Kapat
+                </button>
+              </div>
+              {menu.groups.map((group) => (
+                <nav aria-label={group.title} class="mb-4 last:mb-0">
+                  <p class="mb-2 text-xs font-bold uppercase tracking-wider text-muted">{group.title}</p>
+                  <ul class="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
+                    {group.items.map((item) => (
+                      <li>
+                        <a
+                          href={item.href}
+                          class="flex items-baseline justify-between gap-2 rounded-lg px-2 py-1.5 text-sm text-ink-2 hover:bg-canvas hover:text-ink"
+                        >
+                          <span class="truncate">{item.label}</span>
+                          <span class="shrink-0 text-xs text-muted">{fmt(item.count)}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    )}
+    {quick.length > 0 && (
+      <nav aria-label="Hızlı geçiş" class="-mx-4 min-w-0 flex-1 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:px-0">
+        <ul class="flex w-max gap-2">
+          {quick.map((item) => (
+            <li>
+              <a href={item.href} class="chip whitespace-nowrap">
+                {item.label} <span class="text-xs text-muted">{fmt(item.count)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+  </div>
+)}
+
+<script>
+  // long intros: 3 lines on phones, "Devamı" shows the rest (full text stays in the HTML)
+  document.querySelectorAll<HTMLElement>('[data-clamp]').forEach((text) => {
+    if (text.scrollHeight <= text.clientHeight + 2) return;
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'mt-1 text-sm font-semibold text-brand-text underline underline-offset-2 sm:hidden';
+    more.textContent = 'Devamı';
+    more.addEventListener('click', () => {
+      text.classList.remove('line-clamp-3');
+      more.remove();
+    });
+    text.after(more);
+  });
+
+  // one open panel at a time; close on outside click and Escape
+  const menus = [...document.querySelectorAll<HTMLDetailsElement>('[data-filter-menu]')];
+  if (menus.length) {
+    menus.forEach((menu) =>
+      menu.addEventListener('toggle', () => {
+        if (menu.open) menus.forEach((other) => other !== menu && (other.open = false));
+      }),
+    );
+    document.addEventListener('click', (event) => {
+      if (!(event.target as Element).closest('[data-filter-menu]')) menus.forEach((menu) => (menu.open = false));
+    });
+    document
+      .querySelectorAll('[data-filter-close]')
+      .forEach((button) => button.addEventListener('click', () => button.closest('details')?.removeAttribute('open')));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') menus.forEach((menu) => (menu.open = false));
+    });
+  }
+</script>

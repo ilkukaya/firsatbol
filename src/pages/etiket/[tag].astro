@@ -22,7 +22,6 @@ const hrefOf = (slug: string) => `/etiket/${slug}/`;
 const cityLinks = citySegments
   .filter((page) => page.kind === 'tag' && page.slug === tag.slug)
   .sort((a, b) => b.deals.length - a.deals.length)
-  .slice(0, 24)
   .map((page) => ({ href: `/sehir/${page.citySlug}/${page.slug}/`, label: page.cityName, count: page.deals.length }));
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
@@ -42,7 +41,8 @@ const root = tag.topic && tag.topic.path.length > 0 ? TOPICS.get(tag.topic.path[
   crumbs={crumbs}
   canonical={hrefOf(tag.slug)}
   noindex={!subFacetIndexable(tag)}
-  links={[...(tag.topic ? [topicChildLinks(tag.topic, deals, available, hrefOf)] : []), { title: 'Şehirlere göre', items: cityLinks }]}
+  quick={tag.topic ? topicChildLinks(tag.topic, deals, available, hrefOf).items : []}
+  menus={[{ label: 'Şehirler', icon: 'pin', groups: [{ title: `${tag.name} olan şehirler`, items: cityLinks }] }]}
   searchTerm={tag.name}
   placement={`tag-${tag.slug}`}
 />

@@ -266,6 +266,11 @@ export function topicLinkGroups(
     .map((group) => ({ title: TOPICS.get(group.root)!.name, items: group.items }));
 }
 
+/** The main category of each tree group (for a one-row shortcut bar). */
+export function rootLinks(groups: readonly LinkGroup[]): LinkItem[] {
+  return groups.flatMap((group) => group.items.filter((item) => item.label === group.title));
+}
+
 /** Sub-categories of a tree node in a scope; for a leaf, its sibling nodes instead. */
 export function topicChildLinks(
   topic: FlatTopic,

@@ -123,6 +123,19 @@ test('price options: picking one updates the price and opens that option on the 
   await expect(page.locator('[data-redirect-now]')).toHaveAttribute('href', 'https://example.com/firsat/1001?pid=PUBLISHER_TEST');
 });
 
+test('filter menus keep long link lists out of the way until opened', async ({ page }) => {
+  await page.goto('/kategori/yeme-icme/');
+  const menu = page.locator('[data-filter-menu]').first();
+  const panel = menu.locator('nav').first();
+  await expect(panel).toBeHidden();
+  await menu.locator('summary').click();
+  await expect(panel).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  // the deals start right below the compact bar
+  await expect(page.locator('article').first()).toBeInViewport();
+});
+
 test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {
   await page.goto('/git/ornek-veri-60-dakika-aromaterapi-masaji-1002/');
   let left = false;

@@ -7,7 +7,7 @@ import DealGrid from './DealGrid.astro';
 import EmptyDeals from './EmptyDeals.astro';
 import GuideCard from './GuideCard.astro';
 import Icon from './Icon.astro';
-import LinkGroups from './LinkGroups.astro';
+import FilterBar from './FilterBar.astro';
 import Pagination from './Pagination.astro';
 import AdSlot from './AdSlot.astro';
 import type { Category } from '../config/categories';
@@ -55,13 +55,14 @@ const citySubPages = city
         .map((p) => p.slug),
     )
   : tagPages;
+const treeGroups = topicLinkGroups(
+  city ? allDeals.filter((d) => d.citySlug === city.slug) : allDeals,
+  citySubPages,
+  (slug) => (city ? `/sehir/${city.slug}/${slug}/` : `/etiket/${slug}/`),
+  { roots: treeRoots, maxDepth: 1 },
+);
 const subcategoryGroups: LinkGroup[] = [
-  ...topicLinkGroups(
-    city ? allDeals.filter((d) => d.citySlug === city.slug) : allDeals,
-    citySubPages,
-    (slug) => (city ? `/sehir/${city.slug}/${slug}/` : `/etiket/${slug}/`),
-    { roots: treeRoots, maxDepth: 1 },
-  ),
+  ...treeGroups,
   ...(city
     ? []
     : [
@@ -139,21 +140,17 @@ const crumbs = [
           </aside>
         )}
       </div>
-      {page === 1 && <LinkGroups groups={subcategoryGroups} />}
-      {cityLinks.length > 0 && (
-        <nav aria-label="Şehre göre" class="mt-6">
-          <ul class="flex flex-wrap gap-2">
-            {cityLinks.map((link) => (
-              <li>
-                <a href={link.href} class="chip">
-                  <Icon name="pin" size={15} class="text-brand-text" />
-                  {link.name} <span class="text-xs text-muted">{link.count}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <FilterBar
+        quick={page === 1 ? treeGroups.flatMap((group) => group.items) : []}
+        menus={[
+          {
+            label: 'Şehirler',
+            icon: 'pin',
+            groups: [{ title: 'Şehre göre', items: cityLinks.map((link) => ({ href: link.href, label: link.name, count: link.count })) }],
+          },
+          { label: 'Alt kategoriler', icon: 'tag', groups: subcategoryGroups },
+        ]}
+      />
     </div>
   </section>
 
