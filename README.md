@@ -27,8 +27,8 @@ Provider API/feed ──(build time, server-side secrets)──▶ adapters (src
    ▶ format detection (JSON/XML) ▶ field mapping ▶ normalizeDeal() + Zod ▶ dedupe ▶ drop expired
    ▶ static pages (/firsatlar, /firsat/…, /kategori/…, /sehir/…) + /data/deals.json (client filters)
 
-Scheduled function sync-deals (hourly; queries providers every DEALS_REFRESH_INTERVAL_HOURS)
-   ▶ compares fingerprint with live /data/build-info.json ▶ triggers a build hook only when data changed
+Scheduled function sync-deals (every night 02:00 TSİ = 23:00 UTC)
+   ▶ triggers the build hook ▶ full rebuild with fresh partner data (a provider error keeps the last deploy)
 ```
 
 * Visitors never trigger partner API calls. One build = one provider query (plus pagination).

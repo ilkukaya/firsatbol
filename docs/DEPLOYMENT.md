@@ -49,13 +49,13 @@ Env changes need a redeploy (Deploys → Trigger deploy).
 
 1. **Build & deploy → Build hooks → Add build hook** (name `deal-sync`, branch = production) → copy URL into
    `NETLIFY_BUILD_HOOK_URL` (secret).
-2. The function `sync-deals` runs hourly (scheduled functions run only on the published production deploy), checks
-   providers every `DEALS_REFRESH_INTERVAL_HOURS` (default 6) and triggers the hook only if the data changed.
-   Status: `GET /api/admin/stats` → `sync`.
+2. The function `sync-deals` runs **every night at 02:00 TSİ** (cron `0 23 * * *`, UTC; Türkiye has no DST) and
+   triggers the hook for a full rebuild with fresh data. Scheduled functions run only on the published production
+   deploy. Status: `GET /api/admin/stats` → `sync`.
 3. Manual refresh: `curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" https://<site>/api/admin/refresh`
    (throttled to one build per 10 minutes).
 
-Build minutes: each build takes ~1 minute; at most 4 data rebuilds/day with the default interval.
+Build minutes: each build takes ~8 minutes on Netlify; one scheduled rebuild per night plus one per push.
 
 ## 4. Custom domain (firsatbol.com)
 

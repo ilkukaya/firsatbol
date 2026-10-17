@@ -131,10 +131,9 @@ Every "Fırsatı Gör" button opens `/git/<slug>/`: deal summary, destination ho
 
 ### Rate limits & caching
 
-Paged catalog, event and category queries per build (≈ 175 requests), ≥ 350 ms between request starts,
-3 in parallel, 30 s timeout, 3 retries with exponential backoff + jitter, `Retry-After` honoured. The scheduled sync queries at most
-once per `DEALS_REFRESH_INTERVAL_HOURS` (default 6) and rebuilds only when the data fingerprint changed. Adjust the
-interval to the partner's terms.
+Paged catalog, event and category queries per build (≈ 330 requests), ≥ 350 ms between request starts,
+3 in parallel, 30 s timeout, 3 retries with exponential backoff + jitter, `Retry-After` honoured. The site is rebuilt
+once a night at 02:00 TSİ (`netlify/functions/sync-deals.mts`), i.e. one full import per day.
 
 ## Adding another affiliate source
 
