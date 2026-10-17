@@ -2,7 +2,7 @@
  * Event fan-out. Events are only sent to tools the owner enabled; GA4 only after consent.
  * First-party events go to /api/event and contain no personal data.
  */
-export type TrackEvent = 'deal_click' | 'deal_view' | 'search' | 'newsletter_signup' | 'contact_submit';
+export type TrackEvent = 'deal_click' | 'deal_view' | 'deal_share' | 'search' | 'newsletter_signup' | 'contact_submit';
 export type TrackProps = Record<string, string | number | null | undefined>;
 
 declare global {

@@ -6,6 +6,8 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import DealGrid from '../../components/DealGrid.astro';
 import Icon from '../../components/Icon.astro';
 import DealGallery from '../../components/DealGallery.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
+import { shareHeadline } from '../../lib/share';
 import SectionHeader from '../../components/SectionHeader.astro';
 import { getCategory } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
@@ -93,6 +95,17 @@ const metaDescription = metaSource
       .replace(/\s\S*$/, '') + '…'
   : fallbackDescription;
 const metaTitle = `${deal.title}${deal.city && !deal.title.includes(deal.city) ? ` — ${deal.city}` : ''}`;
+// link previews (WhatsApp, Telegram…): price facts first, then place and the call to action
+const socialDescription = [
+  deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price
+    ? `${formatPrice(deal.originalPrice, deal.currency)} yerine ${formatPrice(deal.price, deal.currency)}`
+    : null,
+  location || null,
+  deal.sessions[0] ? `Sonraki seans ${formatDateTime(deal.sessions[0].date)}` : null,
+  'Fırsatı FırsatBol’da incele',
+]
+  .filter(Boolean)
+  .join(' · ');
 const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter((line) => line.trim().length > 0);
 ---
 
@@ -102,6 +115,10 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
   canonical={`/firsat/${deal.slug}/`}
   noindex={!deal.indexable}
   ogImage={deal.imageLargeUrl ?? deal.imageUrl ?? undefined}
+  ogImageSize={deal.imageLargeUrl ? { width: 1200, height: 1200 } : deal.imageUrl ? { width: 400, height: 400 } : undefined}
+  ogImageAlt={deal.imageUrl ? deal.title : undefined}
+  ogTitle={shareHeadline(deal)}
+  ogDescription={socialDescription}
   jsonLd={[breadcrumbJsonLd(crumbs)]}
 >
   <div
@@ -147,6 +164,7 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
               <span>{deal.address ?? location}</span>
             </p>
           )}
+          <ShareButtons deal={deal} variant="compact" class="mt-4 lg:hidden" />
         </div>
 
         {deal.sessions.length > 0 && (
@@ -307,7 +325,9 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
             hidden={shownPercent === null}
             data-choice-percent-wrap
           >
-            <Icon name="percent" size={15} />%<span data-choice-percent>{shownPercent}</span> indirim
+            <span>
+              %<span data-choice-percent>{shownPercent}</span> indirim
+            </span>
           </p>
           {shownPrice ? (
             <div>
@@ -409,6 +429,7 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
             <Icon name="external" size={18} />
           </a>
           <p class="mt-2 text-center text-xs text-muted">{deal.merchant ?? deal.providerName} sayfası yeni sekmede açılır.</p>
+          <ShareButtons deal={deal} />
 
           <p class="mt-5 rounded-xl bg-canvas p-3 text-xs leading-relaxed text-ink-2">
             {deal.affiliateUrl

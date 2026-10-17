@@ -4,7 +4,7 @@ import { z } from 'zod';
  * First-party interaction events. Deliberately minimal and anonymous: no IP address,
  * user agent, cookie or identifier is accepted or stored.
  */
-export const EVENT_TYPES = ['deal_click', 'deal_view', 'search', 'newsletter_signup', 'contact_submit'] as const;
+export const EVENT_TYPES = ['deal_click', 'deal_view', 'deal_share', 'search', 'newsletter_signup', 'contact_submit'] as const;
 
 const shortText = (max: number) =>
   z

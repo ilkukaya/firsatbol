@@ -136,6 +136,19 @@ test('filter menus keep long link lists out of the way until opened', async ({ p
   await expect(page.locator('article').first()).toBeInViewport();
 });
 
+test('sharing: WhatsApp message, tagged links and a price-first link preview', async ({ page }) => {
+  await page.goto('/firsat/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
+  const whatsapp = page.getByRole('link', { name: 'WhatsApp’ta paylaş' }).last();
+  await expect(whatsapp).toBeVisible();
+  const text = decodeURIComponent((await whatsapp.getAttribute('href'))!.split('text=')[1]!);
+  expect(text).toMatch(/^🔥 %35 indirim: /);
+  expect(text).toContain('780\u00a0TL (1.200\u00a0TL yerine)');
+  expect(text).toContain('utm_source=whatsapp');
+  await expect(page.getByRole('link', { name: 'Telegram’da paylaş' })).toHaveAttribute('href', /t\.me\/share/);
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /^%35 indirim · 780\u00a0TL — /);
+  await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', /1\.200\u00a0TL yerine 780\u00a0TL/);
+});
+
 test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {
   await page.goto('/git/ornek-veri-60-dakika-aromaterapi-masaji-1002/');
   let left = false;
