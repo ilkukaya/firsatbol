@@ -33,13 +33,9 @@
    "image1200x1200": "https://example.com/img/1001-1.jpg",
    "tags": "yeme i̇çme",
    "subDeals": [
-    {
-     "id": "1",
-     "title": "Örnek seçenek",
-     "realPriceWithSymbol": "1200 ₺",
-     "dealPriceWithSymbol": "780 ₺"
-    }
-   ],
+        { "id": "11", "title": "Örnek seçenek — 2 kişilik serpme kahvaltı", "realPriceWithSymbol": "1200 ₺", "dealPriceWithSymbol": "780 ₺", "checkoutLink": "https://www.firsatbufirsat.com/checkout/cart.html?pid=PUBLISHER_TEST&dealId=1001&subDealId=11" },
+        { "id": "12", "title": "Örnek seçenek — 4 kişilik serpme kahvaltı", "realPriceWithSymbol": "2400 ₺", "dealPriceWithSymbol": "1450 ₺", "checkoutLink": "https://www.firsatbufirsat.com/checkout/cart.html?pid=PUBLISHER_TEST&dealId=1001&subDealId=12" }
+      ],
    "dealImages": [
     "https://example.com/img/1001-2.jpg",
     "https://example.com/img/1001-3.jpg"

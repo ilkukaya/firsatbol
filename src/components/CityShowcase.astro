@@ -1,0 +1,119 @@
+---
+/**
+ * "Şehrine göre fırsatlar": the busiest cities as photo cards. Each card is a collage of that
+ * city's own deal photos (the partner's images, no stock imagery), the live deal count and the
+ * city's three biggest categories, linked to their city pages. A last card leads to all 81 provinces.
+ */
+import Icon from './Icon.astro';
+import { ROOT_TOPICS, TOPICS } from '../config/taxonomy';
+import type { Deal } from '../lib/deals/schema';
+import { facetsOf } from '../lib/deals/facets';
+import { citiesWithDeals } from '../lib/deals/taxonomy';
+
+interface Props {
+  deals: readonly Deal[];
+  limit?: number;
+  /** Closing card linking to /sehirler/ (off on that page itself). */
+  allCitiesCard?: boolean;
+}
+const { deals, limit = 7, allCitiesCard = true } = Astro.props;
+const { citySegments } = facetsOf(deals);
+const score = (deal: Deal) => (deal.popular ? 2 : 0) + (deal.discountPercent ?? 0) / 50;
+const withDeals = citiesWithDeals(deals)
+  .filter((city) => city.count > 0)
+  .sort((a, b) => b.count - a.count);
+const cards = withDeals.slice(0, limit).map((city) => {
+  const cityDeals = deals.filter((deal) => deal.citySlug === city.slug);
+  // one photo per main category first, so the collage shows the city's variety
+  const ranked = cityDeals.filter((deal) => deal.imageUrl).sort((a, b) => score(b) - score(a));
+  const photos: Deal[] = [];
+  for (const root of ROOT_TOPICS) {
+    const pick = ranked.find((deal) => deal.topics[0] === root && !photos.includes(deal));
+    if (pick && photos.length < 3) photos.push(pick);
+  }
+  for (const deal of ranked) if (photos.length < 3 && !photos.includes(deal)) photos.push(deal);
+  const topCategories = citySegments
+    .filter((page) => page.kind === 'tag' && page.citySlug === city.slug && page.topic && page.topic.depth === 0)
+    .sort((a, b) => b.deals.length - a.deals.length)
+    .slice(0, 3)
+    .map((page) => ({ href: `/sehir/${city.slug}/${page.slug}/`, label: TOPICS.get(page.slug)!.name, count: page.deals.length }));
+  return { ...city, photos, topCategories };
+});
+const rest = withDeals.slice(limit);
+const fmt = (n: number) => n.toLocaleString('tr-TR');
+---
+
+{cards.length > 0 && (
+  <div class="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-4">
+    {cards.map((city, index) => (
+      <article class="group relative flex w-[78%] shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-line transition hover:shadow-[var(--shadow-lift)] sm:w-auto">
+        <div class="relative grid aspect-[4/3] grid-cols-3 grid-rows-2 gap-0.5 bg-sand">
+          {city.photos.map((deal, i) => (
+            <img
+              src={deal.imageUrl!}
+              alt=""
+              width="400"
+              height="400"
+              loading={index < 4 ? 'eager' : 'lazy'}
+              decoding="async"
+              class:list={[
+                'h-full w-full object-cover transition duration-500 motion-safe:group-hover:scale-[1.04]',
+                i === 0 ? (city.photos.length === 1 ? 'col-span-3 row-span-2' : 'col-span-2 row-span-2') : '',
+                i > 0 && city.photos.length === 2 ? 'row-span-2' : '',
+              ]}
+            />
+          ))}
+          <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/25 to-transparent" />
+          <div class="absolute inset-x-0 bottom-0 p-4 text-white">
+            <h3 class="font-display text-2xl font-extrabold tracking-tight">
+              <a href={`/sehir/${city.slug}/`} class="after:absolute after:inset-0 focus-visible:outline-none">
+                {city.name}
+              </a>
+            </h3>
+            <p class="mt-0.5 text-sm font-semibold text-white/90">{fmt(city.count)} güncel fırsat</p>
+          </div>
+        </div>
+        {city.topCategories.length > 0 && (
+          <ul class="relative z-10 flex flex-wrap gap-1.5 p-3" aria-label={`${city.name} kategorileri`}>
+            {city.topCategories.map((category) => (
+              <li>
+                <a
+                  href={category.href}
+                  class="inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-1 text-xs font-semibold text-ink-2 ring-1 ring-line hover:text-brand-text hover:ring-brand/40"
+                >
+                  {category.label} <span class="text-muted">{fmt(category.count)}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </article>
+    ))}
+    {allCitiesCard && (
+      <a
+        href="/sehirler/"
+        class="group relative flex w-[78%] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-2xl bg-ink p-5 text-white transition hover:shadow-[var(--shadow-lift)] sm:w-auto"
+      >
+        <div class="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand/30 blur-2xl" aria-hidden="true" />
+        <div class="relative">
+          <Icon name="pin" size={26} class="text-brand" />
+          <p class="mt-4 font-display text-2xl font-extrabold tracking-tight">Tüm şehirler</p>
+          <p class="mt-1 text-sm text-white/80">81 ilin hepsi; {fmt(withDeals.length)} ilde güncel fırsat var.</p>
+        </div>
+        {rest.length > 0 && (
+          <p class="relative mt-6 text-sm leading-relaxed text-white/75">
+            {rest
+              .slice(0, 6)
+              .map((city) => city.name)
+              .join(', ')}
+            {rest.length > 6 && ` ve ${rest.length - 6} il daha`}
+          </p>
+        )}
+        <span class="relative mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-white">
+          Şehirleri keşfet
+          <Icon name="arrow-right" size={16} class="transition group-hover:translate-x-0.5" />
+        </span>
+      </a>
+    )}
+  </div>
+)}

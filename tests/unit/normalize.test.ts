@@ -10,6 +10,7 @@ import {
   resolveDiscount,
   toPlainText,
   type NormalizeContext,
+  parseOptions,
 } from '../../src/lib/deals/normalize';
 import { slugify } from '../../src/lib/slug';
 import { normalizeCity } from '../../src/config/cities';
@@ -161,5 +162,24 @@ describe('dedupeDeals', () => {
     expect(deals.map((d) => d.externalId)).toEqual(['1', '3']);
     expect(duplicates).toBe(2);
     expect(canonicalDestination('https://www.a.com/x/?b=2&a=1&utm_medium=x#f')).toBe('a.com/x?a=1&b=2');
+  });
+});
+
+describe('parseOptions', () => {
+  const raw = [
+    { id: 11, title: 'Tek kişilik', dealPriceWithSymbol: '3.031 TL', checkoutLink: 'https://p.example/cart?pid=842&subDealId=11' },
+    { id: 12, title: 'İki kişilik', dealPriceWithSymbol: '4.038 TL', checkoutLink: 'https://p.example/cart?subDealId=12' },
+    { title: 'Gizli', dealPriceWithSymbol: '1 TL', checkoutLink: 'https://p.example/cart?pid=842&apiKey=SECRET' },
+  ];
+  it('keeps only tracked option links and redacts secrets', () => {
+    const options = parseOptions(raw, ['SECRET'], '842');
+    expect(options.map((o) => [o.id, o.price, o.url])).toEqual([
+      ['11', 3031, 'https://p.example/cart?pid=842&subDealId=11'],
+      ['12', 4038, null], // no publisher id → not a referral link
+      [null, 1, 'https://p.example/cart?pid=842'],
+    ]);
+  });
+  it('drops links when the publisher id is unknown', () => {
+    expect(parseOptions(raw).every((o) => o.url === null)).toBe(true);
   });
 });

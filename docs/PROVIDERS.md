@@ -125,6 +125,15 @@ parent are needed — never per-city or per-district links. The next build fetch
 `dealImages` (up to 16 per deal, average ~6) is shown as a swipeable gallery on the detail page; only the first image
 loads eagerly. Cards use `image450_H` (400×400).
 
+### Price options
+
+`subDeals` become selectable options on the deal page (≥ 2 options with a price, an id and a `checkoutLink`).
+`checkoutLink` (`/checkout/cart.html?pid=<publisherId>&dealId=…&subDealId=…`) is the partner's tracked link for that
+option and is kept only when its `pid` equals our publisher id. Picking an option updates price, discount and saving;
+"Fırsatı Gör" opens `/git/<slug>/?secenek=<subDealId>`, which forwards to that option's link. Only links from the
+deal's own option list can be targeted (unknown ids fall back to the deal link — no open redirect). Without
+JavaScript the deal link is used. Measured 2026-10-17: 1 064 deals with selectable options.
+
 ### Transition page
 
 Every "Fırsatı Gör" button opens `/git/<slug>/`: deal summary, destination host, a 3-second countdown with

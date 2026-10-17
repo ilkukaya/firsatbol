@@ -6,6 +6,7 @@ import CategoryGrid from '../components/CategoryGrid.astro';
 import DealGrid from '../components/DealGrid.astro';
 import GuideCard from '../components/GuideCard.astro';
 import HeroShowcase from '../components/HeroShowcase.astro';
+import CityShowcase from '../components/CityShowcase.astro';
 import Icon from '../components/Icon.astro';
 import NewsletterForm from '../components/NewsletterForm.astro';
 import SectionHeader from '../components/SectionHeader.astro';
@@ -37,7 +38,7 @@ const popular = popularDeals(deals, 8);
 const thisWeek = upcomingEvents(deals, now, 7, 8);
 
 const counts = categoryCounts(deals);
-// cities with deals (and the featured ones); every other province is listed on /sehirler/
+// the busiest city also gets its own deal row below the city cards
 const cities = citiesWithDeals(deals).filter((city) => city.count > 0 || city.featured);
 const topCity = [...cities].sort((a, b) => b.count - a.count)[0];
 const topCityDeals = topCity && topCity.count >= 2 ? deals.filter((deal) => deal.citySlug === topCity.slug).slice(0, 4) : [];
@@ -231,21 +232,11 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
     <section aria-labelledby="sehir">
       <SectionHeader
         id="sehir"
-        eyebrow="Yakınınızda"
-        title="Şehrindeki Fırsatlar"
-        description="Şehrinizi seçin; restoran, spa, etkinlik ve aktivite fırsatlarını konuma göre görün."
+        eyebrow="Şehirler"
+        title="Şehrine Göre Fırsatlar"
+        description="Şehrinizi seçin; o şehirdeki restoran, spa, etkinlik ve konaklama fırsatlarını görün. Fotoğraflar şehirdeki güncel fırsatlardan."
       />
-      <ul class="flex flex-wrap gap-2.5">
-        {cities.map((city) => (
-          <li>
-            <a href={`/sehir/${city.slug}/`} class="chip px-4 py-2 text-[0.95rem]">
-              <Icon name="pin" size={16} class="text-brand-text" />
-              {city.name}
-              {city.count > 0 && <span class="rounded-full bg-canvas px-2 text-xs font-bold text-muted">{city.count}</span>}
-            </a>
-          </li>
-        ))}
-      </ul>
+      <CityShowcase deals={deals} />
       {topCity && topCityDeals.length > 0 && (
         <div class="mt-8">
           <h3 class="mb-4 text-lg font-bold">

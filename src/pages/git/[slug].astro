@@ -28,6 +28,16 @@ const host = new URL(target).hostname.replace(/^www\./, '');
 const isAffiliate = deal.affiliateUrl !== null;
 const destination = deal.providerName === 'FırsatBol Editör' ? (deal.merchant ?? host) : deal.providerName;
 const seconds = 3;
+// options with the partner's own tracked checkout link; picked client-side via ?secenek=<id>
+// (only these URLs can be targeted, so the parameter cannot redirect anywhere else)
+const optionTargets = Object.fromEntries(
+  deal.options
+    .filter((option) => option.id && option.url)
+    .map((option) => [
+      option.id!,
+      { url: option.url!, title: option.title, price: option.price !== null ? formatPrice(option.price, deal.currency) : '' },
+    ]),
+);
 ---
 
 <RedirectLayout
@@ -46,6 +56,7 @@ const seconds = 3;
     data-deal-id={deal.id}
     data-provider={deal.provider}
     data-category={deal.category}
+    data-options={JSON.stringify(optionTargets)}
   >
     <a href="/" class="rounded-lg" aria-label="FırsatBol ana sayfa">
       <Logo />
@@ -72,6 +83,10 @@ const seconds = 3;
               )}
             </p>
           )}
+          <p class="mt-1.5 text-sm text-ink-2" hidden data-option-line>
+            Seçiminiz: <strong class="text-ink" data-option-title></strong>
+            <span class="font-bold text-ink" data-option-price></span>
+          </p>
         </div>
       </div>
       <div class="h-1.5 bg-sand" aria-hidden="true">
@@ -122,7 +137,20 @@ const seconds = 3;
   <script>
     const root = document.querySelector<HTMLElement>('[data-redirect]');
     if (root) {
-      const target = root.dataset.redirect!;
+      let target = root.dataset.redirect!;
+      const options = JSON.parse(root.dataset.options ?? '{}') as Record<string, { url: string; title: string; price: string }>;
+      const picked = new URLSearchParams(location.search).get('secenek');
+      const option = picked && Object.hasOwn(options, picked) ? options[picked] : undefined;
+      if (option) {
+        target = option.url;
+        root.querySelector<HTMLAnchorElement>('[data-redirect-now]')!.href = option.url;
+        const line = root.querySelector<HTMLElement>('[data-option-line]');
+        if (line) {
+          line.querySelector('[data-option-title]')!.textContent = option.title;
+          line.querySelector('[data-option-price]')!.textContent = option.price ? `· ${option.price}` : '';
+          line.hidden = false;
+        }
+      }
       const total = Number(root.dataset.seconds ?? '3');
       const countdown = root.querySelector<HTMLElement>('[data-countdown]');
       const progress = root.querySelector<HTMLElement>('[data-progress]');

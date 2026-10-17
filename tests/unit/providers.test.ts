@@ -92,7 +92,14 @@ describe('transformResponse (real Fırsat Bu Fırsat response)', () => {
     expect(zoo!.address).toContain('Çekmeköy');
     expect(zoo!.tags).toContain('hayvanat bahçesi');
     expect(zoo!.conditions.length).toBeGreaterThan(2);
-    expect(zoo!.options[0]).toEqual({ title: expect.stringContaining('Çocuk'), price: 399, originalPrice: 550 });
+    // each option keeps its id and the partner's tracked checkout link (carries our pid)
+    expect(zoo!.options[0]).toEqual({
+      id: '2773271',
+      title: expect.stringContaining('Çocuk'),
+      price: 399,
+      originalPrice: 550,
+      url: 'https://www.firsatbufirsat.com/checkout/cart.html?pid=PUBLISHER_TEST&dealId=1148548&subDealId=2773271',
+    });
   });
   it('never shows a discount when both prices are equal', () => {
     expect(spa).toMatchObject({ price: 2000, originalPrice: null, discountPercent: null, category: 'guzellik-bakim', validUntil: null });

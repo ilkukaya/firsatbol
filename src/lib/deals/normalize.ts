@@ -1,7 +1,7 @@
 import { CATEGORIES, DEFAULT_CATEGORY_SLUG } from '../../config/categories';
 import { normalizeCity } from '../../config/cities';
 import { searchFold, slugify } from '../slug';
-import { dealSchema, type Attribution, type Deal, type TrackingStatus } from './schema';
+import { dealSchema, type Attribution, type Deal, type DealOption, type TrackingStatus } from './schema';
 
 /** Values an adapter extracted from one provider record, before normalisation. */
 export interface RawDealInput {
@@ -43,6 +43,8 @@ export interface NormalizeContext {
   redact: readonly string[];
   /** Allow detail pages from this provider to be indexed when content is substantial. */
   indexProviderPages: boolean;
+  /** Our publisher id: option links are kept only when they carry it (i.e. are tracked referral links). */
+  publisherId?: string | undefined;
 }
 
 export type NormalizeResult = { ok: true; deal: Deal } | { ok: false; reason: string; title?: string };
@@ -225,6 +227,8 @@ export function parseTags(value: unknown): string[] {
 const OPTION_TITLE_KEYS = ['title', 'name', 'baslik'];
 const OPTION_PRICE_KEYS = ['dealPriceWithSymbol', 'dealPrice', 'discountedPrice', 'salePrice', 'price'];
 const OPTION_ORIGINAL_KEYS = ['realPriceWithSymbol', 'realPrice', 'originalPrice', 'oldPrice', 'listPrice'];
+const OPTION_ID_KEYS = ['id', 'subDealId', 'optionId'];
+const OPTION_URL_KEYS = ['checkoutLink', 'buyUrl', 'url', 'link'];
 
 function pick(record: Record<string, unknown>, keys: readonly string[]): unknown {
   for (const key of keys) if (record[key] !== undefined && record[key] !== null && record[key] !== '') return record[key];
@@ -232,9 +236,9 @@ function pick(record: Record<string, unknown>, keys: readonly string[]): unknown
 }
 
 /** Purchasable sub-options (e.g. "Yetişkin bileti", "45 dk masaj"). Prices are never invented. */
-export function parseOptions(value: unknown): { title: string; price: number | null; originalPrice: number | null }[] {
+export function parseOptions(value: unknown, redact: readonly string[] = [], publisherId?: string): DealOption[] {
   if (!Array.isArray(value)) return [];
-  const options: { title: string; price: number | null; originalPrice: number | null }[] = [];
+  const options: DealOption[] = [];
   for (const item of value) {
     if (!item || typeof item !== 'object') continue;
     const record = item as Record<string, unknown>;
@@ -244,7 +248,12 @@ export function parseOptions(value: unknown): { title: string; price: number | n
     const price = parsed === 0 ? null : parsed;
     let originalPrice = parsePrice(pick(record, OPTION_ORIGINAL_KEYS));
     if (originalPrice !== null && (originalPrice <= 0 || price === null || originalPrice <= price)) originalPrice = null;
-    options.push({ title, price, originalPrice });
+    const rawId = pick(record, OPTION_ID_KEYS);
+    const id = (typeof rawId === 'string' || typeof rawId === 'number') && /^[\w-]{1,40}$/.test(String(rawId)) ? String(rawId) : null;
+    const link = parseUrl(pick(record, OPTION_URL_KEYS), redact);
+    // only the partner's own tracked links: an untracked option link would lose the commission
+    const url = link && publisherId && new URL(link).searchParams.get('pid') === publisherId ? link : null;
+    options.push({ id, title, price, originalPrice, url });
   }
   return options.slice(0, 30);
 }
@@ -459,7 +468,7 @@ export function normalizeDeal(raw: RawDealInput, ctx: NormalizeContext): Normali
     popular: parseBoolean(raw.popular),
     isNew: parseBoolean(raw.isNew),
     conditions: parseStringList(raw.conditions).slice(0, 20),
-    options: parseOptions(raw.options),
+    options: parseOptions(raw.options, ctx.redact, ctx.publisherId),
     sessions: [],
     priceFrom: false,
     tags,

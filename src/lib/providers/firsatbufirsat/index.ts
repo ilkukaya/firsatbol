@@ -232,6 +232,7 @@ export function transformResponse(
     now,
     redact,
     indexProviderPages: config.indexProviderPages,
+    publisherId: config.publisherId,
   };
   const deals: Deal[] = [];
   const rejectReasons: Record<string, number> = {};

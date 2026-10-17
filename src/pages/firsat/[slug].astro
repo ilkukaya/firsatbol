@@ -43,6 +43,31 @@ const location = [deal.district, deal.city].filter(Boolean).join(', ');
 const showOriginal = deal.originalPrice !== null && deal.price !== null && deal.originalPrice > deal.price;
 const saving = showOriginal ? deal.originalPrice! - deal.price! : null;
 
+// Selectable options: each carries the partner's own tracked checkout link (subDeal), so the chosen
+// option opens directly on the partner's page via the transition page (/git/<slug>/?secenek=<id>).
+const choices = deal.options
+  .filter((option) => option.id && option.url && option.price !== null)
+  .map((option) => {
+    const original = option.originalPrice !== null && option.originalPrice > option.price! ? option.originalPrice : null;
+    const percent = original ? Math.floor(((original - option.price!) / original) * 100) : 0;
+    return {
+      id: option.id!,
+      title: option.title,
+      price: option.price!,
+      priceLabel: formatPrice(option.price!, deal.currency),
+      originalLabel: original ? formatPrice(original, deal.currency) : '',
+      savingLabel: original ? `${formatPrice(original - option.price!, deal.currency)} tasarruf` : '',
+      percent: percent >= 1 ? percent : null,
+    };
+  });
+const picker = choices.length >= 2;
+const initial = picker ? (choices.find((choice) => choice.price === deal.price) ?? choices[0]!) : undefined;
+const shownPercent = initial ? initial.percent : deal.discountPercent;
+const shownOriginal = initial ? initial.originalLabel : showOriginal ? formatPrice(deal.originalPrice!, deal.currency) : '';
+const shownSaving = initial ? initial.savingLabel : saving !== null ? `${formatPrice(saving, deal.currency)} tasarruf` : '';
+const shownPrice = initial ? initial.priceLabel : deal.price !== null ? formatPrice(deal.price, deal.currency) : '';
+const ctaHref = initial ? `/git/${deal.slug}/?secenek=${encodeURIComponent(initial.id)}` : `/git/${deal.slug}/`;
+
 const crumbs = [
   { name: 'Ana sayfa', path: '/' },
   ...(category ? [{ name: category.name, path: `/kategori/${category.slug}/` }] : []),
@@ -277,24 +302,60 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
           <p data-expired-note class="mb-4 hidden rounded-xl bg-ink px-3 py-2 text-sm font-semibold text-white">
             Bu fırsatın geçerlilik süresi dolmuş görünüyor. Güncel durumu satıcı sayfasında kontrol edin.
           </p>
-          {deal.discountPercent !== null && (
-            <p class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-save-bg px-3 py-1 text-sm font-extrabold text-save">
-              <Icon name="percent" size={15} />%{deal.discountPercent} indirim
-            </p>
-          )}
-          {deal.price !== null ? (
+          <p
+            class="mb-3 inline-flex items-center gap-1.5 rounded-full bg-save-bg px-3 py-1 text-sm font-extrabold text-save"
+            hidden={shownPercent === null}
+            data-choice-percent-wrap
+          >
+            <Icon name="percent" size={15} />%<span data-choice-percent>{shownPercent}</span> indirim
+          </p>
+          {shownPrice ? (
             <div>
-              {showOriginal && (
-                <p class="text-muted">
-                  <span class="sr-only">Önceki fiyat: </span>
-                  <span class="line-through">{formatPrice(deal.originalPrice!, deal.currency)}</span>
-                </p>
-              )}
-              <p class="font-display text-4xl font-extrabold tracking-tight">{formatPrice(deal.price, deal.currency)}</p>
-              {saving !== null && <p class="mt-1 text-sm font-semibold text-save">{formatPrice(saving, deal.currency)} tasarruf</p>}
+              <p class="text-muted" hidden={!shownOriginal} data-choice-original-wrap>
+                <span class="sr-only">Önceki fiyat: </span>
+                <span class="line-through" data-choice-original>
+                  {shownOriginal}
+                </span>
+              </p>
+              <p class="font-display text-4xl font-extrabold tracking-tight" data-choice-price aria-live="polite">
+                {shownPrice}
+              </p>
+              <p class="mt-1 text-sm font-semibold text-save" hidden={!shownSaving} data-choice-saving>
+                {shownSaving}
+              </p>
             </div>
           ) : (
             <p class="text-lg font-semibold text-ink-2">Fiyat bilgisi satıcı sayfasında yer alır.</p>
+          )}
+
+          {picker && (
+            <fieldset class="mt-5 border-t border-line pt-4" data-option-picker>
+              <legend class="flex w-full items-baseline justify-between text-xs font-bold uppercase tracking-wider text-muted">
+                Seçeneğinizi belirleyin <span class="font-semibold normal-case tracking-normal">{choices.length} seçenek</span>
+              </legend>
+              <div class="mt-3 grid max-h-80 gap-2 overflow-y-auto overscroll-contain pr-1">
+                {choices.map((choice) => (
+                  <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-white p-3 transition hover:border-ink/30 has-[:checked]:border-cta has-[:checked]:bg-brand-50 has-[:checked]:ring-1 has-[:checked]:ring-cta has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-brand">
+                    <input
+                      type="radio"
+                      name="secenek"
+                      value={choice.id}
+                      checked={choice.id === initial!.id}
+                      class="h-4 w-4 shrink-0 accent-[var(--color-cta)]"
+                      data-price={choice.priceLabel}
+                      data-original={choice.originalLabel}
+                      data-saving={choice.savingLabel}
+                      data-percent={choice.percent ?? ''}
+                    />
+                    <span class="min-w-0 flex-1 text-sm font-medium leading-snug text-ink">{choice.title}</span>
+                    <span class="shrink-0 text-right leading-tight">
+                      {choice.originalLabel && <s class="block text-xs text-muted">{choice.originalLabel}</s>}
+                      <span class="text-sm font-extrabold text-ink">{choice.priceLabel}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           )}
 
           <dl class="mt-5 grid gap-2.5 border-t border-line pt-4 text-sm">
@@ -327,7 +388,7 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
           </dl>
 
           <a
-            href={`/git/${deal.slug}/`}
+            href={ctaHref}
             target="_blank"
             rel="nofollow"
             class="deal-cta btn-cta mt-5 w-full py-3.5 text-base"
@@ -337,8 +398,14 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
             data-category={deal.category}
             data-city={deal.citySlug ?? undefined}
             data-placement="detail"
+            data-choice-cta={`/git/${deal.slug}/`}
           >
             Fırsatı Gör
+            {picker && (
+              <span class="rounded-full bg-white px-2 py-0.5 text-sm font-extrabold text-cta-hover" data-choice-cta-price>
+                {initial!.priceLabel}
+              </span>
+            )}
             <Icon name="external" size={18} />
           </a>
           <p class="mt-2 text-center text-xs text-muted">{deal.merchant ?? deal.providerName} sayfası yeni sekmede açılır.</p>
@@ -371,4 +438,34 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
       </section>
     )}
   </div>
+  <script>
+    // option picker: the selected option's price, saving and discount are shown and the CTA opens
+    // the transition page for exactly that option (/git/<slug>/?secenek=<id>)
+    const picker = document.querySelector<HTMLFieldSetElement>('[data-option-picker]');
+    const cta = document.querySelector<HTMLAnchorElement>('[data-choice-cta]');
+    if (picker && cta) {
+      const set = (selector: string, text: string) => {
+        const el = document.querySelector<HTMLElement>(selector);
+        if (el) el.textContent = text;
+      };
+      const show = (selector: string, visible: boolean) => {
+        const el = document.querySelector<HTMLElement>(selector);
+        if (el) el.hidden = !visible;
+      };
+      picker.addEventListener('change', (event) => {
+        const input = event.target as HTMLInputElement;
+        if (input.name !== 'secenek') return;
+        const { price = '', original = '', saving = '', percent = '' } = input.dataset;
+        set('[data-choice-price]', price);
+        set('[data-choice-original]', original);
+        show('[data-choice-original-wrap]', original !== '');
+        set('[data-choice-saving]', saving);
+        show('[data-choice-saving]', saving !== '');
+        set('[data-choice-percent]', percent);
+        show('[data-choice-percent-wrap]', percent !== '');
+        set('[data-choice-cta-price]', price);
+        cta.href = `${cta.dataset.choiceCta}?secenek=${encodeURIComponent(input.value)}`;
+      });
+    }
+  </script>
 </BaseLayout>

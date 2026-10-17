@@ -20,7 +20,8 @@ test('homepage shows real sections, attribution and fixture warning', async ({ p
   await page.goto('/');
   await expect(page.locator('h1')).toContainText('Fırsat çok');
   await expect(page.getByRole('heading', { name: 'Öne Çıkan Fırsatlar' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Şehrindeki Fırsatlar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Şehrine Göre Fırsatlar' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^Tüm şehirler 81 ilin hepsi/ })).toBeVisible();
   await expectAttribution(page);
   await expect(page.getByText('SENTETİK ÖRNEK VERİDİR')).toBeVisible();
   // fixture builds must never be indexable
@@ -76,7 +77,8 @@ test('deal detail: gallery, CTA via transition page, disclosure and attribution'
   await expect(page.locator('[data-gallery-track] li')).toHaveCount(3);
   await expect(page.locator('[data-gallery-counter]')).toHaveText('1 / 3');
   const cta = page.locator('a[data-placement="detail"]');
-  await expect(cta).toHaveAttribute('href', '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
+  // the option matching the deal price is preselected and carried to the transition page
+  await expect(cta).toHaveAttribute('href', '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/?secenek=11');
   await expect(page.getByText('%35 indirim')).toBeVisible();
   await expect(page.getByRole('complementary', { name: 'Fırsat özeti' }).getByText('iş ortaklığı bağlantısıdır')).toBeVisible();
   await expectAttribution(page);
@@ -101,6 +103,24 @@ test('transition page shows the destination and forwards to the unchanged referr
   const navigation = page.waitForRequest((request) => request.url() === target);
   await page.clock.runFor(3500);
   await navigation;
+});
+
+test('price options: picking one updates the price and opens that option on the partner site', async ({ page }) => {
+  await page.goto('/firsat/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/');
+  const picker = page.getByRole('group', { name: /Seçeneğinizi belirleyin/ });
+  await expect(picker.getByRole('radio')).toHaveCount(2);
+  await picker.getByRole('radio', { name: /4 kişilik/ }).check();
+  await expect(page.locator('[data-choice-price]')).toHaveText(/1\.450/);
+  await expect(page.locator('[data-choice-percent]')).toHaveText('39');
+  const cta = page.locator('a[data-placement="detail"]');
+  await expect(cta).toHaveAttribute('href', '/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/?secenek=12');
+  await page.goto('/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/?secenek=12');
+  const option = 'https://www.firsatbufirsat.com/checkout/cart.html?pid=PUBLISHER_TEST&dealId=1001&subDealId=12';
+  await expect(page.locator('[data-redirect-now]')).toHaveAttribute('href', option);
+  await expect(page.locator('[data-option-line]')).toContainText('4 kişilik');
+  // an unknown option id falls back to the deal's own referral link (no open redirect)
+  await page.goto('/git/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001/?secenek=https://evil.example');
+  await expect(page.locator('[data-redirect-now]')).toHaveAttribute('href', 'https://example.com/firsat/1001?pid=PUBLISHER_TEST');
 });
 
 test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {

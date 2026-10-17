@@ -30,9 +30,13 @@ export const attributionSchema = z.object({
 });
 
 export const dealOptionSchema = z.object({
+  /** Provider's option id (e.g. subDealId), used to pick the option on the transition page. */
+  id: z.string().nullable(),
   title: z.string().min(1).max(200),
   price: z.number().nonnegative().nullable(),
   originalPrice: z.number().positive().nullable(),
+  /** The provider's own referral link for this option (carries our publisher id), when supplied. */
+  url: httpsUrl.nullable(),
 });
 
 /** One scheduled session of an event (Etkinlik API), exactly as supplied. */

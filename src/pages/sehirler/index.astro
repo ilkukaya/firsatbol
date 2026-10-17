@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import AttributionNotice from '../../components/AttributionNotice.astro';
+import CityShowcase from '../../components/CityShowcase.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Icon from '../../components/Icon.astro';
 import { getDeals } from '../../lib/deals/repository';
@@ -32,6 +33,13 @@ const crumbs = [
           ` Ayrıca ${nationwide.toLocaleString('tr-TR')} fırsat belirli bir şehre bağlı değildir (kargolu ürünler, online hizmetler).`}
       </p>
     </div>
+    <section aria-labelledby="one-cikan-sehirler" class="mb-10">
+      <h2 id="one-cikan-sehirler" class="mb-4 font-display text-xl font-bold">
+        En çok fırsat olan şehirler
+      </h2>
+      <CityShowcase deals={deals} limit={8} allCitiesCard={false} />
+    </section>
+    <h2 class="mb-4 font-display text-xl font-bold">Tüm iller</h2>
     <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {cities.map((city) => (
         <li>
