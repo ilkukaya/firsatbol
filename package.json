@@ -22,6 +22,7 @@
     "test:e2e": "playwright test",
     "links": "node scripts/check-links.mjs",
     "provider:inspect": "tsx scripts/inspect-provider.ts",
+    "audit:coverage": "tsx scripts/audit-coverage.ts",
     "ci": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build && npm run links",
     "test:e2e:build": "DEALS_USE_FIXTURES=true DEALS_NOW=2026-10-16T12:00:00Z astro build && astro build --outDir dist-empty",
     "test:e2e:all": "npm run test:e2e:build && playwright test",

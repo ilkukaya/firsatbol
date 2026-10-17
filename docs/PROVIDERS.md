@@ -109,6 +109,17 @@ Measured 2026-10-17: 7 486 pages (81 provinces, 1 073 district/city-category pag
 `children`; main nodes also name the FırsatBol `category`). Only the category name, its `tagIds[]` number and its
 parent are needed — never per-city or per-district links. The next build fetches the memberships.
 
+### Coverage check ("is anything missing?")
+
+* **Every build** writes a summary to `/data/build-info.json` (API records received, accepted, expired, rejected;
+  deals without category, city or district; deals with an event calendar).
+* **Full cross-check** on demand: `FIRSATBUFIRSAT_API_KEY=… FIRSATBUFIRSAT_PUBLISHER_ID=… npm run audit:coverage`
+  (≈ 800 requests, 5–8 min). It compares the site's import with the unfiltered catalog, the Etkinlik API, all
+  81 `cityId` queries and every category `tagIds[]` query (province × category queries are subsets of these),
+  and lists data gaps. Result of 2026-10-17: **no deal missing**; 2 partner deals skipped on purpose because
+  their voucher end date (`couponEndDate`) is in the past; 95 deals carry only tags outside the category tree
+  (mostly konaklama/otel, zayıflama, sağlık) — send their tagIds to add them to `src/config/taxonomy.ts`.
+
 ### Images
 
 `dealImages` (up to 16 per deal, average ~6) is shown as a swipeable gallery on the detail page; only the first image
