@@ -23,17 +23,28 @@ export function shareHeadline(deal: Pick<Deal, 'title' | 'discountPercent' | 'pr
 }
 
 /**
- * The message people send: short, scannable on a phone, facts only (no invented urgency).
- *   🔥 %43 indirim: Park Of İstanbul Hayvanat Bahçesi Giriş Bileti
+ * The message people send: a personal opener, then the facts (no invented urgency), then the link
+ * (WhatsApp turns the first link into the price-card preview).
+ *   FırsatBol'da bak ne buldum! 👀
+ *   Bu fırsatı kaçırmaman için seninle paylaşıyorum:
+ *
+ *   🔥 %43 indirim · Park Of İstanbul Hayvanat Bahçesi Giriş Bileti
  *   💰 429 TL (750 TL yerine)
  *   📍 Çekmeköy, İstanbul
+ *
  *   👉 https://…
  */
+export const SHARE_OPENER = 'FırsatBol’da bak ne buldum! 👀\nBu fırsatı kaçırmaman için seninle paylaşıyorum:';
+
 export function shareMessage(
   deal: Pick<Deal, 'title' | 'discountPercent' | 'price' | 'originalPrice' | 'priceFrom' | 'currency' | 'district' | 'city' | 'sessions'>,
   url: string,
 ): string {
-  const lines = [deal.discountPercent !== null ? `🔥 %${deal.discountPercent} indirim: ${deal.title}` : `🔥 Fırsat: ${deal.title}`];
+  const lines = [
+    SHARE_OPENER,
+    '',
+    deal.discountPercent !== null ? `🔥 %${deal.discountPercent} indirim · ${deal.title}` : `🔥 ${deal.title}`,
+  ];
   if (deal.price !== null) {
     const was =
       deal.originalPrice !== null && deal.originalPrice > deal.price ? ` (${formatPrice(deal.originalPrice, deal.currency)} yerine)` : '';
@@ -42,7 +53,7 @@ export function shareMessage(
   const place = [deal.district, deal.city].filter(Boolean).join(', ');
   if (place) lines.push(`📍 ${place}`);
   if (deal.sessions[0]) lines.push(`📅 Sonraki seans: ${formatSession(deal.sessions[0].date)}`);
-  lines.push(`👉 ${url}`);
+  if (url) lines.push('', `👉 ${url}`);
   return lines.join('\n');
 }
 
@@ -52,11 +63,12 @@ export function shareIntents(siteUrl: string, deal: Parameters<typeof shareMessa
   const enc = encodeURIComponent;
   return {
     whatsapp: `https://wa.me/?text=${enc(shareMessage(deal, link('whatsapp')))}`,
-    telegram: `https://t.me/share/url?url=${enc(link('telegram'))}&text=${enc(shareMessage(deal, '').replace(/\n👉 $/, ''))}`,
+    telegram: `https://t.me/share/url?url=${enc(link('telegram'))}&text=${enc(shareMessage(deal, ''))}`,
     x: `https://twitter.com/intent/tweet?text=${enc(shareHeadline(deal))}&url=${enc(link('x'))}`,
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${enc(link('facebook'))}`,
     copy: link('copy'),
     native: link('native'),
-    message: shareMessage(deal, link('native')),
+    // native share sheets add the url themselves
+    message: shareMessage(deal, ''),
   };
 }

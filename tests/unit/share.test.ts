@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shareHeadline, shareIntents, shareMessage, shareUrl } from '../../src/lib/share';
+import { SHARE_OPENER, shareHeadline, shareIntents, shareMessage, shareUrl } from '../../src/lib/share';
 
 const deal = {
   slug: 'park-of-istanbul-1148548',
@@ -20,17 +20,21 @@ describe('share', () => {
       'https://firsatbol.com/firsat/park-of-istanbul-1148548/?utm_source=whatsapp&utm_medium=social&utm_campaign=paylas',
     );
   });
-  it('writes a short, factual WhatsApp message', () => {
+  it('writes a personal, factual WhatsApp message', () => {
     expect(shareMessage(deal, 'https://x.test/')).toBe(
       [
-        '🔥 %43 indirim: Park Of İstanbul Hayvanat Bahçesi Giriş Bileti',
-        '💰 429 TL (750 TL yerine)',
+        'FırsatBol’da bak ne buldum! 👀',
+        'Bu fırsatı kaçırmaman için seninle paylaşıyorum:',
+        '',
+        '🔥 %43 indirim · Park Of İstanbul Hayvanat Bahçesi Giriş Bileti',
+        '💰 429\u00a0TL (750\u00a0TL yerine)',
         '📍 Çekmeköy, İstanbul',
+        '',
         '👉 https://x.test/',
       ].join('\n'),
     );
-    expect(shareMessage({ ...deal, discountPercent: null, originalPrice: null, district: null, city: null }, 'u')).toBe(
-      '🔥 Fırsat: Park Of İstanbul Hayvanat Bahçesi Giriş Bileti\n💰 429 TL\n👉 u',
+    expect(shareMessage({ ...deal, discountPercent: null, originalPrice: null, district: null, city: null }, '')).toBe(
+      `${SHARE_OPENER}\n\n🔥 Park Of İstanbul Hayvanat Bahçesi Giriş Bileti\n💰 429\u00a0TL`,
     );
   });
   it('puts discount and price into the preview headline', () => {

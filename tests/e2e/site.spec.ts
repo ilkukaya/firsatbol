@@ -141,7 +141,7 @@ test('sharing: WhatsApp message, tagged links and a price-first link preview', a
   const whatsapp = page.getByRole('link', { name: 'WhatsApp’ta paylaş' }).last();
   await expect(whatsapp).toBeVisible();
   const text = decodeURIComponent((await whatsapp.getAttribute('href'))!.split('text=')[1]!);
-  expect(text).toMatch(/^🔥 %35 indirim: /);
+  expect(text).toMatch(/^FırsatBol’da bak ne buldum! 👀\nBu fırsatı kaçırmaman için seninle paylaşıyorum:\n\n🔥 %35 indirim · /);
   expect(text).toContain('780\u00a0TL (1.200\u00a0TL yerine)');
   expect(text).toContain('utm_source=whatsapp');
   await expect(page.getByRole('link', { name: 'Telegram’da paylaş' })).toHaveAttribute('href', /t\.me\/share/);
@@ -150,7 +150,7 @@ test('sharing: WhatsApp message, tagged links and a price-first link preview', a
   // price card image, drawn by the og function; the version changes with the price
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     'content',
-    /\/og\/firsat\/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001-[a-z0-9]+\.png$/,
+    /\/og\/firsat\/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001-[a-z0-9]+\.jpg$/,
   );
   await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
 });

@@ -23,6 +23,7 @@
     "node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-600-normal.woff",
     "node_modules/@fontsource/plus-jakarta-sans/files/plus-jakarta-sans-latin-ext-800-normal.woff",
     "node_modules/@resvg/resvg-wasm/index_bg.wasm",
+    "dist/data/og.json",
   ]
 
 # Deploy previews / branch deploys: never fail on provider outages, never index.

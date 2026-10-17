@@ -8,6 +8,7 @@
 import { SITE } from '../config/site';
 import type { Deal } from '../lib/deals/schema';
 import { shareHeadline, shareIntents } from '../lib/share';
+import { ogCard, ogImagePath } from '../lib/og';
 
 interface Props {
   deal: Deal;
@@ -43,6 +44,7 @@ const compact = variant === 'compact';
   data-share-copy={intents.copy}
   data-share-title={headline}
   data-share-text={intents.message}
+  data-share-card={ogImagePath(deal.slug, ogCard(deal))}
 >
   {!compact && <p class="mb-3 text-sm font-bold text-ink">Arkadaşlarınla paylaş</p>}
   <a
@@ -126,13 +128,30 @@ const compact = variant === 'compact';
   import { track } from '../scripts/analytics';
 
   document.querySelectorAll<HTMLElement>('[data-share]').forEach((root) => {
-    const { dealId, shareUrl = location.href, shareCopy = location.href, shareTitle = document.title, shareText = '' } = root.dataset;
+    const {
+      dealId,
+      shareUrl = location.href,
+      shareCopy = location.href,
+      shareTitle = document.title,
+      shareText = '',
+      shareCard,
+    } = root.dataset;
+    // draw the price card as soon as someone reaches for a share button, so it is cached by the time
+    // WhatsApp's crawler asks for it (the first render can take a few seconds)
+    let warmed = false;
+    const warm = () => {
+      if (warmed || !shareCard) return;
+      warmed = true;
+      new Image().src = shareCard;
+    };
+    ['pointerenter', 'touchstart', 'focusin'].forEach((type) => root.addEventListener(type, warm, { passive: true, once: true }));
     const native = root.querySelector<HTMLButtonElement>('[data-share-channel="native"]');
     if (native && typeof navigator.share === 'function') native.hidden = false;
     root.addEventListener('click', async (event) => {
       const control = (event.target as Element).closest<HTMLElement>('[data-share-channel]');
       if (!control) return;
       const channel = control.dataset.shareChannel!;
+      warm();
       track('deal_share', { deal: dealId, placement: channel });
       if (channel === 'copy') {
         event.preventDefault();
@@ -150,7 +169,7 @@ const compact = variant === 'compact';
       } else if (channel === 'native') {
         event.preventDefault();
         try {
-          await navigator.share({ title: shareTitle, text: shareText.replace(/\n👉 .*$/, ''), url: shareUrl });
+          await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
         } catch {
           /* cancelled */
         }

@@ -2,7 +2,7 @@ import type { Deal } from './deals/schema';
 import { formatPrice, formatSession } from './format';
 
 /**
- * Social preview cards for deals (1200×630 PNG with the deal photo, discount and price), drawn on
+ * Social preview cards for deals (1200×630 JPEG with the deal photo, discount and price), drawn on
  * demand by the `og` Netlify Function from /data/og.json and cached by the CDN. The image URL
  * carries a version of the card's content, so a price change gets a new image.
  */
@@ -50,12 +50,12 @@ export function ogVersion(card: OgCard): string {
 }
 
 export function ogImagePath(slug: string, card: OgCard): string {
-  return `/og/firsat/${slug}-${ogVersion(card)}.png`;
+  return `/og/firsat/${slug}-${ogVersion(card)}.jpg`;
 }
 
-/** "/og/firsat/<slug>-<version>.png" → slug (the version only busts caches). */
+/** "/og/firsat/<slug>-<version>.jpg" → slug (the version only busts caches; .png = earlier links). */
 export function slugFromOgFile(file: string): string | null {
-  const match = /^([a-z0-9-]+)-[a-z0-9]+\.png$/.exec(file);
+  const match = /^([a-z0-9-]+)-[a-z0-9]+\.(?:jpg|png)$/.exec(file);
   return match ? match[1]! : null;
 }
 

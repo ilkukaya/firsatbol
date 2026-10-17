@@ -10,7 +10,7 @@
 - [x] `/sitemap.xml` generated from the same data and rules as the robots meta (noindex pages excluded)
 - [x] `/rss.xml` (guides + indexable deals)
 - [x] Open Graph + Twitter cards, 1200×630 default image; deals get a price card (photo + "%43 İNDİRİM" + price +
-      place) drawn on demand by `netlify/functions/og.mts` at `/og/firsat/<slug>-<version>.png` from `/data/og.json`,
+      place) drawn on demand by `netlify/functions/og.mts` at `/og/firsat/<slug>-<version>.jpg` (JPEG ~80 KB) from the bundled `/data/og.json`,
       cached by the CDN for a year (the version changes with the price); on any error it redirects to the deal photo
 - [x] Share buttons on deal pages (WhatsApp first, Telegram, X, Facebook, copy, native share) with `utm_source`
       per channel and a `deal_share` analytics event

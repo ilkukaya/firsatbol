@@ -4,13 +4,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import satori from 'satori';
 import { Resvg, initWasm } from '@resvg/resvg-wasm';
+import jpeg from 'jpeg-js';
 import { OG_HEIGHT, OG_WIDTH, ogLayout, slugFromOgFile, type OgCard } from '../../src/lib/og';
 
 /**
- * GET /og/firsat/<slug>-<version>.png — the deal's social preview card (photo, discount, price),
- * drawn on first request and cached by Netlify's CDN for a year (the version in the URL changes
- * with the card's content). Card data comes from this deploy's /data/og.json; only known deals
- * can be drawn. Any failure falls back to the deal photo, so a preview is never empty.
+ * GET /og/firsat/<slug>-<version>.jpg — the deal's social preview card (photo, discount, price),
+ * drawn on first request and cached by Netlify's CDN (the version in the URL changes with the
+ * card's content). JPEG (~100 KB): WhatsApp skips large preview images. Card data is this deploy's
+ * /data/og.json, bundled with the function (no network round trip); only known deals can be
+ * drawn. Any failure falls back to the deal photo, so a preview is never empty. The deal page
+ * requests the card as soon as someone touches a share button, so it is ready when the
+ * messenger's crawler asks for it.
  */
 const FONT_DIR = 'node_modules/@fontsource/plus-jakarta-sans/files';
 const WASM = 'node_modules/@resvg/resvg-wasm/index_bg.wasm';
@@ -39,14 +43,19 @@ function setup() {
   return ready;
 }
 
-let cards: { at: number; data: Record<string, OgCard> } | undefined;
+let cards: Record<string, OgCard> | undefined;
 async function card(origin: string, slug: string): Promise<OgCard | undefined> {
-  if (!cards || Date.now() - cards.at > 10 * 60_000) {
-    const response = await fetch(new URL('/data/og.json', origin));
-    if (!response.ok) throw new Error(`og.json HTTP ${response.status}`);
-    cards = { at: Date.now(), data: (await response.json()) as Record<string, OgCard> };
+  if (!cards) {
+    try {
+      cards = JSON.parse(asset('dist/data/og.json').toString('utf8')) as Record<string, OgCard>;
+    } catch {
+      // not bundled (e.g. local runs): read it from this deploy
+      const response = await fetch(new URL('/data/og.json', origin));
+      if (!response.ok) throw new Error(`og.json HTTP ${response.status}`);
+      cards = (await response.json()) as Record<string, OgCard>;
+    }
   }
-  return cards.data[slug];
+  return cards[slug];
 }
 
 async function photo(url: string | null): Promise<string | null> {
@@ -75,10 +84,11 @@ export default async (request: Request, context: Context) => {
       height: OG_HEIGHT,
       fonts,
     });
-    const png = new Resvg(svg, { fitTo: { mode: 'width', value: OG_WIDTH } }).render().asPng();
-    return new Response(new Uint8Array(png), {
+    const image = new Resvg(svg, { fitTo: { mode: 'width', value: OG_WIDTH } }).render();
+    const encoded = jpeg.encode({ data: image.pixels, width: image.width, height: image.height }, 82);
+    return new Response(new Uint8Array(encoded.data), {
       headers: {
-        'content-type': 'image/png',
+        'content-type': 'image/jpeg',
         'cache-control': 'public, max-age=604800, immutable',
         'netlify-cdn-cache-control': 'public, durable, max-age=31536000, immutable',
       },
