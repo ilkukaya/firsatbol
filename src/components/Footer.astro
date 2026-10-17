@@ -1,9 +1,43 @@
 ---
+import Icon from './Icon.astro';
 import Logo from './Logo.astro';
 import { CATEGORIES } from '../config/categories';
 import { ANALYTICS, SITE, SOCIAL } from '../config/site';
+import { ROOT_TOPICS, TOPICS } from '../config/taxonomy';
+import { getDeals } from '../lib/deals/repository';
+import { facetsOf } from '../lib/deals/facets';
 
 const year = new Intl.DateTimeFormat('tr-TR', { timeZone: SITE.timeZone, year: 'numeric' }).format(new Date());
+// "Popüler hizmetler": the busiest category-tree nodes, at most 4 per main category so one tree
+// (e.g. tours) cannot fill the list; "İlçelerdeki fırsatlar": every İstanbul district with a page.
+const { deals } = await getDeals();
+const facets = facetsOf(deals);
+const titleCase = (text: string) =>
+  text
+    .split(' ')
+    .map((word) => (['ve', 'ile'].includes(word) ? word : word.charAt(0).toLocaleUpperCase('tr-TR') + word.slice(1)))
+    .join(' ');
+const byName = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label, 'tr');
+const topicPages = facets.tags.filter((facet) => facet.topic);
+const popularServices = ROOT_TOPICS.flatMap((root) =>
+  topicPages
+    .filter((facet) => facet.slug === root || TOPICS.get(facet.slug)!.path[0] === root)
+    .sort((a, b) => b.deals.length - a.deals.length)
+    .slice(0, 4),
+)
+  .sort((a, b) => b.deals.length - a.deals.length)
+  .slice(0, 40)
+  .map((facet) => ({ href: `/etiket/${facet.slug}/`, label: `${titleCase(facet.name)} Fırsatları` }))
+  .sort(byName);
+const districtLinks = facets.districts
+  .filter((district) => district.citySlug === 'istanbul')
+  .map((district) => ({ href: `/sehir/istanbul/${district.slug}/`, label: `${district.name} Fırsatları` }))
+  .sort(byName);
+const linkSections = [
+  { title: 'Popüler Hizmetler', icon: 'store' as const, links: popularServices, more: { href: '/firsatlar/', label: 'Tüm fırsatlar' } },
+  { title: 'İlçelerdeki Fırsatlar', icon: 'pin' as const, links: districtLinks, more: { href: '/sehirler/', label: 'Tüm şehirler' } },
+].filter((section) => section.links.length > 0);
+
 const columns = [
   {
     title: 'Keşfet',
@@ -37,6 +71,32 @@ const columns = [
 ---
 
 <footer class="mt-20 bg-ink text-white/80">
+  {linkSections.length > 0 && (
+    <div class="border-b border-white/10">
+      <div class="container-page grid gap-10 py-12 lg:grid-cols-2">
+        {linkSections.map((section) => (
+          <nav aria-label={section.title}>
+            <h2 class="flex items-center gap-2.5 font-display text-xl font-bold text-white">
+              <Icon name={section.icon} size={22} class="text-brand" />
+              {section.title}
+            </h2>
+            <ul class="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+              {section.links.map((link) => (
+                <li>
+                  <a href={link.href} class="hover:text-white hover:underline underline-offset-2">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <a href={section.more.href} class="mt-4 inline-block text-sm font-semibold text-white underline underline-offset-2">
+              {section.more.label} →
+            </a>
+          </nav>
+        ))}
+      </div>
+    </div>
+  )}
   <div class="container-page grid gap-10 py-14 lg:grid-cols-[1.3fr_2fr]">
     <div class="max-w-sm">
       <a href="/" aria-label="FırsatBol ana sayfa" class="inline-block rounded-lg">

@@ -1,3 +1,4 @@
+import { isKnownDistrict } from '../../config/districts';
 import { ROOT_TOPICS, TOPICS, type FlatTopic } from '../../config/taxonomy';
 import { slugify } from '../slug';
 import type { Deal } from './schema';
@@ -140,7 +141,7 @@ export function districtFacets(deals: readonly Deal[], min = DISTRICT_MIN_PAGE):
   for (const deal of deals) {
     if (!deal.citySlug || !deal.city || !deal.district) continue;
     const slug = slugify(deal.district, 60);
-    if (!slug) continue;
+    if (!slug || !isKnownDistrict(deal.citySlug, slug)) continue;
     const key = `${deal.citySlug}/${slug}`;
     const entry = map.get(key) ?? { slug, name: deal.district, citySlug: deal.citySlug, cityName: deal.city, deals: [] };
     entry.deals.push(deal);

@@ -44,6 +44,10 @@ const deals = [
 ];
 
 describe('facets', () => {
+  it('gives no district page to venues filed under the wrong province', () => {
+    const outside = [deal('İstanbul', 'Kartepe', 'otel'), deal('İstanbul', 'Kartepe', 'otel'), deal('Kocaeli', 'Kartepe', 'otel')];
+    expect(districtFacets(outside).map((d) => `${d.citySlug}/${d.slug}`)).toEqual(['kocaeli/kartepe']);
+  });
   it('slugs and labels tags in Turkish', () => {
     expect(tagSlug('Köpük Masajı')).toBe('kopuk-masaji');
     expect(tagLabel('ıslak alan')).toBe('Islak alan');

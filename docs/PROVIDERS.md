@@ -93,6 +93,10 @@ A node's page lists its own deals and those of all its sub-categories; breadcrum
 category pages show the tree grouped by main category. Other provider tags keep their own pages ("Diğer alt
 kategoriler"), except tags that only rename a node (≥ 90 % of their deals in a node they cover to ≥ 60 %).
 
+District pages of provinces listed in `src/config/districts.ts` (İstanbul's 39 districts with their townIds) are
+limited to those districts: the partner files some venues just outside the city (Kartepe, Çerkezköy…) under
+"İstanbul"; they stay on the İstanbul page without a false district page.
+
 Every tree node and every district with **at least one deal** gets its page in every scope (Türkiye, each province,
 each district); all 81 provinces have a city page. Pages below 5 deals are `noindex` (thin content) but fully linked.
 Plain provider tags: ≥ 5 deals Türkiye-wide, ≥ 4 per city, ≥ 3 per district; indexed from 8 (Türkiye-wide) / 5.
