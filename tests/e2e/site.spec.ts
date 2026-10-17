@@ -147,6 +147,12 @@ test('sharing: WhatsApp message, tagged links and a price-first link preview', a
   await expect(page.getByRole('link', { name: 'Telegram’da paylaş' })).toHaveAttribute('href', /t\.me\/share/);
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /^%35 indirim · 780\u00a0TL — /);
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', /1\.200\u00a0TL yerine 780\u00a0TL/);
+  // price card image, drawn by the og function; the version changes with the price
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    'content',
+    /\/og\/firsat\/ornek-veri-bogaz-manzarali-serpme-kahvalti-2-kisilik-1001-[a-z0-9]+\.png$/,
+  );
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630');
 });
 
 test('cancelling the transition keeps the visitor on FırsatBol', async ({ page }) => {

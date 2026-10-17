@@ -9,7 +9,11 @@
 - [x] `/robots.txt` (production: allow + sitemap; previews/branch deploys: disallow all)
 - [x] `/sitemap.xml` generated from the same data and rules as the robots meta (noindex pages excluded)
 - [x] `/rss.xml` (guides + indexable deals)
-- [x] Open Graph + Twitter cards, 1200×630 default image, per-deal image when available
+- [x] Open Graph + Twitter cards, 1200×630 default image; deals get a price card (photo + "%43 İNDİRİM" + price +
+      place) drawn on demand by `netlify/functions/og.mts` at `/og/firsat/<slug>-<version>.png` from `/data/og.json`,
+      cached by the CDN for a year (the version changes with the price); on any error it redirects to the deal photo
+- [x] Share buttons on deal pages (WhatsApp first, Telegram, X, Facebook, copy, native share) with `utm_source`
+      per channel and a `deal_share` analytics event
 - [x] JSON-LD: Organization (name/url/logo only), WebSite + SearchAction, BreadcrumbList, ItemList, Article (guides).
       **No** Offer/Product/Review/AggregateRating markup — we are not the seller and do not fabricate ratings.
 - [x] Breadcrumbs (visible + structured), including category-tree ancestors (İstanbul › Masaj › Spa › Hamam)

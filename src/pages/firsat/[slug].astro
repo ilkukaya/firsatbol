@@ -8,6 +8,7 @@ import Icon from '../../components/Icon.astro';
 import DealGallery from '../../components/DealGallery.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
 import { shareHeadline } from '../../lib/share';
+import { OG_HEIGHT, OG_WIDTH, ogCard, ogImagePath } from '../../lib/og';
 import SectionHeader from '../../components/SectionHeader.astro';
 import { getCategory } from '../../config/categories';
 import { getDeals } from '../../lib/deals/repository';
@@ -114,9 +115,9 @@ const descriptionParagraphs = (deal.description ?? '').split(/\n{2,}|\n/).filter
   description={metaDescription}
   canonical={`/firsat/${deal.slug}/`}
   noindex={!deal.indexable}
-  ogImage={deal.imageLargeUrl ?? deal.imageUrl ?? undefined}
-  ogImageSize={deal.imageLargeUrl ? { width: 1200, height: 1200 } : deal.imageUrl ? { width: 400, height: 400 } : undefined}
-  ogImageAlt={deal.imageUrl ? deal.title : undefined}
+  ogImage={ogImagePath(deal.slug, ogCard(deal))}
+  ogImageSize={{ width: OG_WIDTH, height: OG_HEIGHT }}
+  ogImageAlt={shareHeadline(deal)}
   ogTitle={shareHeadline(deal)}
   ogDescription={socialDescription}
   jsonLd={[breadcrumbJsonLd(crumbs)]}
