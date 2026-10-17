@@ -14,6 +14,9 @@ export interface Category {
   shortName: string;
   homeTitle: string;
   icon: CategoryIcon;
+  /** Accent colour (text/icon on white ≥ 4.5:1) and its soft background — navigation and tiles. */
+  accent: string;
+  accentBg: string;
   metaTitle: string;
   metaDescription: string;
   intro: string;
@@ -30,6 +33,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Teknoloji',
     homeTitle: 'Teknoloji ve Elektronik',
     icon: 'cpu',
+    accent: '#2563eb',
+    accentBg: '#eff6ff',
     metaTitle: 'Teknoloji ve Elektronik Fırsatları',
     metaDescription:
       'Telefon, bilgisayar, aksesuar ve elektronik ürünlerde iş ortaklarımızdan derlenen güncel kampanya ve indirimler. Satın almadan önce koşulları karşılaştırın.',
@@ -63,6 +68,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Yeme İçme',
     homeTitle: 'Yeme İçme Fırsatları',
     icon: 'utensils',
+    accent: '#c2410c',
+    accentBg: '#fff4ec',
     metaTitle: 'Yeme İçme Fırsatları: Restoran, Kahvaltı ve Akşam Yemeği',
     metaDescription:
       'Restoran, kahvaltı, akşam yemeği ve kafe kampanyaları. Şehrinizdeki yeme içme fırsatlarını menü içeriği ve geçerlilik koşullarıyla birlikte inceleyin.',
@@ -108,6 +115,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Tatil',
     homeTitle: 'Tatil ve Konaklama',
     icon: 'palm',
+    accent: '#0e7490',
+    accentBg: '#ecfeff',
     metaTitle: 'Tatil ve Konaklama Fırsatları: Otel, Tur ve Hafta Sonu Kaçamakları',
     metaDescription:
       'Otel, butik konaklama, tur ve hafta sonu kaçamağı kampanyaları. Tarih, oda tipi ve dahil hizmetleri karşılaştırarak size uygun tatil fırsatını bulun.',
@@ -150,6 +159,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Güzellik',
     homeTitle: 'Güzellik ve Bakım',
     icon: 'sparkles',
+    accent: '#be185d',
+    accentBg: '#fdf2f8',
     metaTitle: 'Güzellik ve Bakım Fırsatları: Spa, Masaj ve Kişisel Bakım',
     metaDescription:
       'Spa, masaj, cilt bakımı, kuaför ve kişisel bakım hizmetlerinde güncel kampanyalar. Seans süresi ve randevu koşullarını inceleyerek karar verin.',
@@ -194,6 +205,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Etkinlik',
     homeTitle: 'Etkinlikler ve Eğlence',
     icon: 'ticket',
+    accent: '#7c3aed',
+    accentBg: '#f5f3ff',
     metaTitle: 'Etkinlik ve Eğlence Fırsatları: Konser, Tiyatro ve Aktiviteler',
     metaDescription:
       'Konser, tiyatro, stand-up, atölye ve aile aktivitelerinde indirimli bilet ve kampanyalar. Etkinlik tarihi ve mekân bilgisiyle birlikte listelenir.',
@@ -240,6 +253,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Ev & Yaşam',
     homeTitle: 'Ev ve Yaşam',
     icon: 'home',
+    accent: '#15803d',
+    accentBg: '#ecfdf3',
     metaTitle: 'Ev ve Yaşam Fırsatları: Ev Hizmetleri, Dekorasyon ve Spor',
     metaDescription:
       'Ev temizliği, dekorasyon, mutfak, spor salonu ve eğitim gibi yaşam alanlarında güncel kampanyalar. Hizmet kapsamını ve koşulları kontrol ederek seçin.',
@@ -289,6 +304,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Alışveriş',
     homeTitle: 'Alışveriş Fırsatları',
     icon: 'bag',
+    accent: '#a16207',
+    accentBg: '#fefce8',
     metaTitle: 'Alışveriş Fırsatları: Moda, Hediye ve Diğer Kampanyalar',
     metaDescription:
       'Moda, ayakkabı, hediye, kitap ve diğer alışveriş kategorilerinde iş ortaklarımızdan derlenen güncel indirim ve kampanyalar.',
@@ -322,6 +339,8 @@ export const CATEGORIES: readonly Category[] = [
     shortName: 'Kuponlar',
     homeTitle: 'Kupon ve İndirim Kodları',
     icon: 'percent',
+    accent: '#b91c1c',
+    accentBg: '#fef2f2',
     metaTitle: 'Kupon ve İndirim Kodları',
     metaDescription:
       'Yetkili kaynaklardan gelen kupon ve indirim kodları. Kodun geçerlilik tarihi, alt limit ve kullanım koşullarını kontrol ederek kullanın.',

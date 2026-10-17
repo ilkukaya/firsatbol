@@ -1,0 +1,129 @@
+---
+/**
+ * Homepage category tiles in a bento grid: the largest category first and biggest. Each tile shows
+ * a photo from the category's own best deal (the partner's image), its live deal count and its
+ * busiest sub-categories. Categories without deals are named in one line instead of empty tiles.
+ */
+import Icon from './Icon.astro';
+import { CATEGORIES } from '../config/categories';
+import type { Deal } from '../lib/deals/schema';
+import { facetsOf } from '../lib/deals/facets';
+
+interface Props {
+  deals: readonly Deal[];
+}
+const { deals } = Astro.props;
+const { tags } = facetsOf(deals);
+const score = (deal: Deal) => (deal.popular ? 2 : 0) + (deal.discountPercent ?? 0) / 50;
+const fmt = (n: number) => n.toLocaleString('tr-TR');
+
+const tiles = CATEGORIES.map((category) => {
+  const own = deals.filter((deal) => deal.category === category.slug);
+  const photo = own.filter((deal) => deal.imageUrl).sort((a, b) => score(b) - score(a))[0];
+  // busiest sub-category pages among this category's deals (tree nodes first, then other tags)
+  const ids = new Set(own.map((deal) => deal.id));
+  const subs = tags
+    .map((facet) => ({ facet, n: facet.deals.filter((deal) => ids.has(deal.id)).length }))
+    .filter(({ facet, n }) => n >= 3 && n < own.length && facet.slug !== category.slug)
+    .sort((a, b) => Number(Boolean(b.facet.topic)) - Number(Boolean(a.facet.topic)) || b.n - a.n)
+    .slice(0, 3)
+    .map(({ facet, n }) => ({ href: `/etiket/${facet.slug}/`, label: facet.name, count: n }));
+  return { category, count: own.length, photo, subs };
+})
+  .filter((tile) => tile.count > 0)
+  .sort((a, b) => b.count - a.count);
+const empty = CATEGORIES.filter((category) => !tiles.some((tile) => tile.category.slug === category.slug));
+// fill the last row with the "all deals" tile: big tile = 4 cells, second = 2, others 1 (lg: 4 columns)
+const used = tiles.length === 0 ? 0 : tiles.length === 1 ? 4 : tiles.length + 4;
+const lgRest = (4 - (used % 4)) % 4 || 4;
+const smRest = used % 2 === 0 ? 2 : 1;
+const total = tiles.reduce((sum, tile) => sum + tile.count, 0);
+---
+
+{tiles.length > 0 && (
+  <>
+    <ul class="grid auto-rows-[11.5rem] grid-cols-2 gap-3 sm:gap-4 lg:auto-rows-[13rem] lg:grid-cols-4">
+      {tiles.map((tile, index) => {
+        const big = index === 0;
+        const wide = index === 1;
+        const image = big || wide ? (tile.photo?.imageLargeUrl ?? tile.photo?.imageUrl) : tile.photo?.imageUrl;
+        return (
+          <li
+            style={`--accent:${tile.category.accent};--accent-bg:${tile.category.accentBg}`}
+            class:list={[
+              'group relative overflow-hidden rounded-2xl bg-ink ring-1 ring-line',
+              big && 'col-span-2 row-span-2',
+              wide && 'col-span-2',
+            ]}
+          >
+            {image && (
+              <img
+                src={image}
+                alt=""
+                width={big ? 1200 : 400}
+                height={big ? 1200 : 400}
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 h-full w-full object-cover transition duration-700 motion-safe:group-hover:scale-105"
+              />
+            )}
+            <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/5" />
+            <div class="relative flex h-full flex-col justify-between p-4 sm:p-5">
+              <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-bg)] text-[var(--accent)] shadow-sm transition group-hover:bg-[var(--accent)] group-hover:text-white">
+                <Icon name={tile.category.icon} size={20} />
+              </span>
+              <div>
+                <h3
+                  class:list={[
+                    'font-display font-extrabold leading-tight tracking-tight text-white',
+                    big ? 'text-3xl sm:text-4xl' : 'text-lg sm:text-xl',
+                  ]}
+                >
+                  <a href={`/kategori/${tile.category.slug}/`} class="after:absolute after:inset-0 focus-visible:outline-none">
+                    {tile.category.name}
+                  </a>
+                </h3>
+                <p class="mt-1 text-sm font-semibold text-white/85">{fmt(tile.count)} güncel fırsat</p>
+                {(big || wide) && tile.subs.length > 0 && (
+                  <ul class="relative z-10 mt-3 flex flex-wrap gap-1.5">
+                    {tile.subs.map((sub) => (
+                      <li>
+                        <a
+                          href={sub.href}
+                          class="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-semibold text-white ring-1 ring-white/25 backdrop-blur hover:bg-white hover:text-ink"
+                        >
+                          {sub.label} <span class="opacity-75">{fmt(sub.count)}</span>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </li>
+        );
+      })}
+      <li
+        class:list={[
+          'group relative overflow-hidden rounded-2xl bg-brand-50 ring-1 ring-brand/20',
+          smRest === 2 && 'col-span-2',
+          lgRest === 4 ? 'lg:col-span-4' : lgRest === 3 ? 'lg:col-span-3' : lgRest === 2 ? 'lg:col-span-2' : 'lg:col-span-1',
+        ]}
+      >
+        <a href="/firsatlar/" class="flex h-full flex-col justify-between p-4 sm:p-5">
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-cta text-white">
+            <Icon name="tag" size={20} />
+          </span>
+          <span>
+            <span class="block font-display text-lg font-extrabold leading-tight text-ink sm:text-xl">Tüm fırsatlar</span>
+            <span class="mt-1 flex items-center gap-1.5 text-sm font-semibold text-brand-text">
+              {fmt(total)} fırsatı filtreleyin
+              <Icon name="arrow-right" size={16} class="transition group-hover:translate-x-0.5" />
+            </span>
+          </span>
+        </a>
+      </li>
+    </ul>
+    {empty.length > 0 && <p class="mt-4 text-sm text-muted">Yakında: {empty.map((category) => category.name).join(', ')}</p>}
+  </>
+)}

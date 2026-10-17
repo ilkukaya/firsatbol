@@ -3,7 +3,7 @@ import Logo from './Logo.astro';
 import Icon from './Icon.astro';
 import { CATEGORIES } from '../config/categories';
 import { getDeals } from '../lib/deals/repository';
-import { citiesWithDeals } from '../lib/deals/taxonomy';
+import { categoryCounts, citiesWithDeals } from '../lib/deals/taxonomy';
 
 const { deals } = await getDeals();
 const allCities = citiesWithDeals(deals);
@@ -13,6 +13,21 @@ const moreCities = allCities.length > cities.length;
 const path = Astro.url.pathname;
 const query = Astro.url.searchParams.get('q') ?? '';
 const isActive = (href: string) => path.startsWith(href);
+
+// category navigation: each category in its own accent colour; empty categories ("Yakında") are left out
+const counts = categoryCounts(deals);
+const navItems = [
+  { href: '/firsatlar/', label: 'Tümü', icon: 'tag' as const, accent: '#0f1b2d', accentBg: '#efe9e1', count: 0 },
+  ...CATEGORIES.filter((category) => (counts.get(category.slug) ?? 0) > 0).map((category) => ({
+    href: `/kategori/${category.slug}/`,
+    label: category.shortName,
+    icon: category.icon,
+    accent: category.accent,
+    accentBg: category.accentBg,
+    count: counts.get(category.slug) ?? 0,
+  })),
+  { href: '/rehber/', label: 'Rehberler', icon: 'book' as const, accent: '#475569', accentBg: '#f1f5f9', count: 0 },
+];
 ---
 
 <header class="z-40 md:sticky md:top-0 border-b border-line/80 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
@@ -103,40 +118,42 @@ const isActive = (href: string) => path.startsWith(href);
 
     <nav aria-label="Kategoriler" class="-mx-4 overflow-x-auto px-4 pb-3 scrollbar-none sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
       <ul class="flex w-max gap-2">
-        <li>
-          <a
-            href="/firsatlar/"
-            class:list={['chip whitespace-nowrap', isActive('/firsatlar/') && 'border-ink bg-ink text-white hover:text-white']}
-            aria-current={isActive('/firsatlar/') ? 'page' : undefined}
-          >
-            Tümü
-          </a>
-        </li>
-        {CATEGORIES.map((category) => {
-          const href = `/kategori/${category.slug}/`;
-          const active = isActive(href);
+        {navItems.map((item) => {
+          const active = isActive(item.href);
           return (
             <li>
               <a
-                href={href}
-                class:list={['chip whitespace-nowrap', active && 'border-ink bg-ink text-white hover:text-white']}
+                href={item.href}
+                style={`--accent:${item.accent};--accent-bg:${item.accentBg}`}
+                class:list={[
+                  'group flex items-center gap-2 whitespace-nowrap rounded-full py-1 pl-1 pr-3.5 text-sm font-semibold ring-1 transition duration-200',
+                  active
+                    ? 'bg-[var(--accent)] text-white ring-transparent shadow-sm'
+                    : 'bg-white text-ink-2 ring-line hover:bg-[var(--accent-bg)] hover:text-[var(--accent)] hover:ring-[color-mix(in_srgb,var(--accent)_35%,transparent)]',
+                ]}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon name={category.icon} size={16} class={active ? '' : 'text-brand-text'} />
-                {category.shortName}
+                <span
+                  class:list={[
+                    'flex h-7 w-7 items-center justify-center rounded-full transition duration-200',
+                    active
+                      ? 'bg-white/20 text-white'
+                      : 'bg-[var(--accent-bg)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white motion-safe:group-hover:-rotate-6',
+                  ]}
+                  aria-hidden="true"
+                >
+                  <Icon name={item.icon} size={15} />
+                </span>
+                {item.label}
+                {item.count > 0 && (
+                  <span class:list={['text-xs font-medium', active ? 'text-white/80' : 'text-muted group-hover:text-[var(--accent)]']}>
+                    {item.count.toLocaleString('tr-TR')}
+                  </span>
+                )}
               </a>
             </li>
           );
         })}
-        <li>
-          <a
-            href="/rehber/"
-            class:list={['chip whitespace-nowrap', isActive('/rehber/') && 'border-ink bg-ink text-white hover:text-white']}
-          >
-            <Icon name="book" size={16} class={isActive('/rehber/') ? '' : 'text-brand-text'} />
-            Rehberler
-          </a>
-        </li>
       </ul>
     </nav>
   </div>

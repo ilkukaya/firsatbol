@@ -2,18 +2,19 @@ export const TIME_ZONE = 'Europe/Istanbul';
 export const LOCALE = 'tr-TR';
 
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
+const tlNumber = new Intl.NumberFormat(LOCALE, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
+/**
+ * Prices as Turkish readers write them: "1.950 TL" (amount first, "TL" spelled out — the ₺ sign
+ * on the left is unusual in Türkiye and not everyone knows it). A non-breaking space keeps
+ * amount and unit together. Other currencies use the standard locale format.
+ */
 export function formatPrice(amount: number, currency = 'TRY'): string {
-  const key = currency;
-  let formatter = currencyFormatters.get(key);
+  if (currency === 'TRY') return `${tlNumber.format(amount)}\u00a0TL`;
+  let formatter = currencyFormatters.get(currency);
   if (!formatter) {
-    formatter = new Intl.NumberFormat(LOCALE, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    });
-    currencyFormatters.set(key, formatter);
+    formatter = new Intl.NumberFormat(LOCALE, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    currencyFormatters.set(currency, formatter);
   }
   return formatter.format(amount);
 }

@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AttributionNotice from '../components/AttributionNotice.astro';
 import CategoryGrid from '../components/CategoryGrid.astro';
+import CategoryShowcase from '../components/CategoryShowcase.astro';
 import DealGrid from '../components/DealGrid.astro';
 import GuideCard from '../components/GuideCard.astro';
 import HeroShowcase from '../components/HeroShowcase.astro';
@@ -28,9 +29,23 @@ const byId = new Map(deals.map((deal) => [deal.id, deal]));
 let featured = featuredDeals(deals, 8);
 let featuredIsEditorial = featured.length > 0;
 if (!featuredIsEditorial) {
-  featured = sortEntries(deals.filter((deal) => deal.discountPercent !== null).map(toIndexEntry), 'indirim')
-    .slice(0, 8)
-    .map((entry) => byId.get(entry.id)!);
+  // highest verified discounts, but mixed: at most 2 per category, 1 per merchant and 1 per title
+  // (the same show in several cities), so one busy sector (e.g. beauty) cannot fill the whole row
+  const ranked = sortEntries(deals.filter((deal) => deal.discountPercent !== null).map(toIndexEntry), 'indirim').map((entry) =>
+    byId.get(entry.id)!,
+  );
+  const perCategory = new Map<string, number>();
+  const seen = new Set<string>();
+  featured = [];
+  for (const deal of ranked) {
+    const keys = [`m:${(deal.merchant ?? deal.id).toLocaleLowerCase('tr-TR')}`, `t:${deal.title.toLocaleLowerCase('tr-TR')}`];
+    if ((perCategory.get(deal.category) ?? 0) >= 2 || keys.some((key) => seen.has(key))) continue;
+    perCategory.set(deal.category, (perCategory.get(deal.category) ?? 0) + 1);
+    keys.forEach((key) => seen.add(key));
+    featured.push(deal);
+    if (featured.length === 8) break;
+  }
+  for (const deal of ranked) if (featured.length < 8 && !featured.includes(deal)) featured.push(deal);
 }
 const shown = new Set(featured.map((deal) => deal.id));
 const fresh = newDeals(deals, now, 8).filter((deal) => !shown.has(deal.id));
@@ -175,7 +190,7 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
           description={
             featuredIsEditorial
               ? 'FırsatBol tarafından öne çıkarılan fırsatlar.'
-              : 'Kaynağında doğrulanabilen en yüksek indirim oranlarına sahip fırsatlar.'
+              : 'Farklı kategorilerden, indirim oranı kaynağında doğrulanabilen en iyi fırsatlar.'
           }
           href="/firsatlar/"
         />
@@ -251,8 +266,13 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
     </section>
 
     <section aria-labelledby="kategoriler">
-      <SectionHeader id="kategoriler" eyebrow="Keşfet" title="Kategorilere Göz Atın" />
-      <CategoryGrid counts={counts} />
+      <SectionHeader
+        id="kategoriler"
+        eyebrow="Keşfet"
+        title="Kategorilere Göz Atın"
+        description="Her kategoride fotoğraflar o kategorideki güncel fırsatlardan; alt kategorilere doğrudan geçebilirsiniz."
+      />
+      {deals.length > 0 ? <CategoryShowcase deals={deals} /> : <CategoryGrid counts={counts} />}
     </section>
 
     {categorySections.map(({ category, deals: sectionDeals }) => (

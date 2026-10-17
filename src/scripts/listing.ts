@@ -10,12 +10,8 @@ import { track } from './analytics';
 const root = document.querySelector<HTMLElement>('[data-listing]');
 if (root) void init(root);
 
-const priceFormat = new Intl.NumberFormat('tr-TR', {
-  style: 'currency',
-  currency: 'TRY',
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
+// same as src/lib/format.ts: "1.950 TL"
+const priceFormat = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const dateFormat = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: 'numeric', month: 'long', year: 'numeric' });
 const sessionFormat = new Intl.DateTimeFormat('tr-TR', {
   timeZone: 'Europe/Istanbul',
@@ -35,7 +31,9 @@ function icon(name: string): string {
 }
 
 function formatPrice(value: number, currency: string): string {
-  return currency === 'TRY' ? priceFormat.format(value) : new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(value);
+  return currency === 'TRY'
+    ? `${priceFormat.format(value)}\u00a0TL`
+    : new Intl.NumberFormat('tr-TR', { style: 'currency', currency }).format(value);
 }
 
 /** Mirrors src/components/DealCard.astro. Keep markup in sync. */
