@@ -5,6 +5,7 @@ import AttributionNotice from '../components/AttributionNotice.astro';
 import CategoryGrid from '../components/CategoryGrid.astro';
 import DealGrid from '../components/DealGrid.astro';
 import GuideCard from '../components/GuideCard.astro';
+import HeroShowcase from '../components/HeroShowcase.astro';
 import Icon from '../components/Icon.astro';
 import NewsletterForm from '../components/NewsletterForm.astro';
 import SectionHeader from '../components/SectionHeader.astro';
@@ -50,6 +51,24 @@ const guides = (await getCollection('guides', (entry) => !entry.data.draft))
   .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
   .slice(0, 6);
 
+// hero: three real deals with photos — breakfast, massage/spa and a getaway (popular & discounted first)
+const heroScore = (deal: (typeof deals)[number]) => (deal.popular ? 2 : 0) + (deal.discountPercent ?? 0) / 50;
+const heroPool = deals
+  .filter((deal) => deal.imageUrl && deal.price !== null && deal.title.length <= 110)
+  .sort((a, b) => heroScore(b) - heroScore(a));
+const heroSlots: ((deal: (typeof deals)[number]) => boolean)[] = [
+  (deal) => deal.topics.includes('kahvalti'),
+  (deal) => ['hamam', 'kopuk-masaji', 'bali-masaji', 'aromaterapi-masaji', 'cift-masaji'].some((slug) => deal.topics.includes(slug)),
+  (deal) => deal.category === 'tatil' && !deal.topics.includes('turlar'),
+  (deal) => deal.topics.includes('tiyatro'),
+];
+const heroDeals: typeof deals = [];
+for (const slot of heroSlots) {
+  const pick = heroPool.find((deal) => slot(deal) && !heroDeals.includes(deal));
+  if (pick && heroDeals.length < 3) heroDeals.push(pick);
+}
+for (const deal of heroPool) if (heroDeals.length < 3 && !heroDeals.includes(deal)) heroDeals.push(deal);
+
 const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pilates'];
 ---
 
@@ -62,7 +81,9 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
 >
   <!-- HERO -->
   <section class="relative overflow-hidden border-b border-line bg-[radial-gradient(1200px_500px_at_85%_-10%,#ffe4d1_0%,transparent_60%),linear-gradient(#fff,#f7f5f2)]">
-    <div class="container-page grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.15fr_1fr] lg:py-20">
+    <div
+      class:list={['container-page grid items-center gap-10 py-12 sm:py-16 lg:py-20', heroDeals.length > 0 && 'lg:grid-cols-[1.15fr_1fr]']}
+    >
       <div>
         <h1 class="font-display text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-ink sm:text-6xl">
           Fırsat çok,
@@ -112,58 +133,7 @@ const quickSearches = ['Kahvaltı', 'Masaj', 'Otel', 'Konser', 'Kulaklık', 'Pil
         )}
       </div>
 
-      <!-- decorative illustration: original artwork, contains no deal data -->
-      <div class="relative mx-auto hidden aspect-square w-full max-w-md lg:block" aria-hidden="true">
-        <div class="absolute inset-6 rounded-[2.5rem] bg-ink"></div>
-        <div class="absolute inset-6 overflow-hidden rounded-[2.5rem]">
-          <div class="absolute -right-10 -top-10 h-56 w-56 rounded-full bg-brand/90 blur-[2px]"></div>
-          <div class="absolute -bottom-16 -left-10 h-64 w-64 rounded-full bg-sun/80"></div>
-        </div>
-        <div class="absolute left-2 top-16 w-56 -rotate-6 rounded-2xl bg-white p-4 shadow-[var(--shadow-lift)]">
-          <div class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-text">
-              <Icon name="utensils" size={20} />
-            </span>
-            <div class="flex-1 space-y-1.5">
-              <div class="h-2.5 w-24 rounded bg-ink/80"></div>
-              <div class="h-2 w-16 rounded bg-ink/20"></div>
-            </div>
-          </div>
-          <div class="mt-4 flex items-center justify-between">
-            <div class="h-3 w-14 rounded bg-save/80"></div>
-            <div class="h-7 w-20 rounded-full bg-cta"></div>
-          </div>
-        </div>
-        <div class="absolute right-0 top-40 w-56 rotate-[5deg] rounded-2xl bg-white p-4 shadow-[var(--shadow-lift)]">
-          <div class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-save-bg text-save">
-              <Icon name="palm" size={20} />
-            </span>
-            <div class="flex-1 space-y-1.5">
-              <div class="h-2.5 w-28 rounded bg-ink/80"></div>
-              <div class="h-2 w-12 rounded bg-ink/20"></div>
-            </div>
-          </div>
-          <div class="mt-4 flex items-center justify-between">
-            <div class="h-3 w-16 rounded bg-save/80"></div>
-            <div class="h-7 w-20 rounded-full bg-cta"></div>
-          </div>
-        </div>
-        <div class="absolute bottom-10 left-10 w-52 -rotate-2 rounded-2xl bg-white p-4 shadow-[var(--shadow-lift)]">
-          <div class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-ink text-white">
-              <Icon name="ticket" size={20} />
-            </span>
-            <div class="flex-1 space-y-1.5">
-              <div class="h-2.5 w-20 rounded bg-ink/80"></div>
-              <div class="h-2 w-14 rounded bg-ink/20"></div>
-            </div>
-          </div>
-        </div>
-        <svg class="absolute right-10 top-4 h-12 w-12 text-sun" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"></path>
-        </svg>
-      </div>
+      <HeroShowcase deals={heroDeals} total={deals.length} />
     </div>
   </section>
 
