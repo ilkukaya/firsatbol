@@ -49,7 +49,7 @@ Env changes need a redeploy (Deploys → Trigger deploy).
 
 1. **Build & deploy → Build hooks → Add build hook** (name `deal-sync`, branch = production) → copy URL into
    `NETLIFY_BUILD_HOOK_URL` (secret).
-2. The function `sync-deals` runs **every night at 02:00 TSİ** (cron `0 23 * * *`, UTC; Türkiye has no DST) and
+2. The function `sync-deals` runs **every night at 02:30 TSİ** (cron `30 23 * * *`, UTC; Türkiye has no DST) and
    triggers the hook for a full rebuild with fresh data. Scheduled functions run only on the published production
    deploy. Status: `GET /api/admin/stats` → `sync`.
 3. Manual refresh: `curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" https://<site>/api/admin/refresh`

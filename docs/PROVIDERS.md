@@ -157,7 +157,7 @@ Every "Fırsatı Gör" button opens `/git/<slug>/`: deal summary, destination ho
 
 Paged catalog, event and category queries per build (≈ 330 requests), ≥ 350 ms between request starts,
 3 in parallel, 30 s timeout, 3 retries with exponential backoff + jitter, `Retry-After` honoured. The site is rebuilt
-once a night at 02:00 TSİ (`netlify/functions/sync-deals.mts`), i.e. one full import per day.
+once a night at 02:30 TSİ (`netlify/functions/sync-deals.mts`), i.e. one full import per day.
 
 ## Adding another affiliate source
 

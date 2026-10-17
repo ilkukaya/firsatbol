@@ -27,7 +27,7 @@ Provider API/feed ──(build time, server-side secrets)──▶ adapters (src
    ▶ format detection (JSON/XML) ▶ field mapping ▶ normalizeDeal() + Zod ▶ dedupe ▶ drop expired
    ▶ static pages (/firsatlar, /firsat/…, /kategori/…, /sehir/…) + /data/deals.json (client filters)
 
-Scheduled function sync-deals (every night 02:00 TSİ = 23:00 UTC)
+Scheduled function sync-deals (every night 02:30 TSİ = 23:30 UTC)
    ▶ triggers the build hook ▶ full rebuild with fresh partner data (a provider error keeps the last deploy)
 ```
 
